@@ -1,0 +1,127 @@
+<html>
+<table  style="width: 993px; height: 200px; text-align: left; margin-left: auto; margin-right: auto;"  border="0" cellpadding="2" cellspacing="2">
+  <tbody>
+  <tr>
+  <td style="text-align: center;"> <IMG SRC="zen/report/img/LogoIclar.jpg" NAME="Logo" ALIGN=LEFT  WIDTH=150 HEIGHT=130 BORDER=0></td>      
+  <td style="text-align: center; vertical-align: middle;">
+    <span><IMG SRC="zen/report/img/pagocomision/barcode/${datos.barcode}.jpg" ALIGN=LEFT  BORDER=0></span>     
+    <br>
+  </td>   
+  </tr>  
+  </tbody>
+</table>
+<br></br>
+<br></br>
+<hr style="width: 100%; height: 2px;">
+<table  style="width: 985px; height: 82px; text-align: left; margin-left: auto; margin-right: auto;"  border="0" cellpadding="2" cellspacing="2"> 
+  <tbody>
+    <tr>      
+    <td style="text-align: right; width: 190px;">
+      <big># Pago:</big>
+    </td>
+    <td style="text-align: left;  width: 183px;">
+     <big>${datos.idpago}</big>
+    </td>      
+    <td style="text-align: right; width: 150px;">
+     <big>Asesor:</big>
+    </td>      
+    <td style="text-align: left; width: 400px;">
+      <big>${datos.nombrevendedor}</big>
+    </td>    
+    </tr>    
+    <tr>      
+    <td style="text-align: right; width: 190px;">
+      <big>Fecha:</big>
+    </td>      
+    <td style="text-align: left;  width: 183px;">
+     <big>${datos.fechareconocimiento}</big>
+    </td>      
+    <td style="text-align: right; width: 150px;">
+     <big>Importe:</big>
+    </td>      
+    <td style="text-align: left;  width: 400px;">
+      <big>${datos.pagoimporte}</big>
+    </td>    
+    </tr>
+
+    <tr>      
+    <td style="text-align: right; width: 190px;">
+      <big>Impuesto:</big>
+    </td>
+    <td style="text-align: left;  width: 183px;">
+     <big>${datos.pagoimpuesto}</big>
+    </td>      
+    <td style="text-align: right; width: 150px;">
+    <big>Referencia:</big>
+    </td>      
+    <td style="text-align: left;  width: 400px;">
+     <big>${datos.pagoreferencia}</big>
+    </td>    
+    </tr>    
+    <tr>      
+    <td style="text-align: right; width: 190px;">
+     <big>Tipo pago:</big>
+    </td>      
+    <td style="text-align: left;  width: 183px;">
+     <big>${datos.pagotipo}</big>
+    </td>      
+    <td style="text-align: right; width: 150px;">
+      <big><big><big></big></big></big>
+    </td>      
+    <td style="text-align: left;  width: 400px;">
+      <big><big><big></big></big></big>
+    </td>    
+    </tr>
+
+    </tbody>
+    </table>
+
+      <hr style="height: 1px; width: 100%;" noshade="noshade">
+      
+        <table style="text-aling:center; font-style: italic; font-weight: bold; width: 100%;" cellpadding="2">
+           <tr>
+                      <th style="background-color: #C0C0C0">Movimiento</th>
+                      <th style="background-color: #C0C0C0">Documento</th>
+                      <th style="background-color: #C0C0C0">Inmueble</th>
+                      <th style="background-color: #C0C0C0">Cuenta</th>
+                      <th style="background-color: #C0C0C0">Manzana</th>
+                      <th style="background-color: #C0C0C0">Lote</th>
+                      <th style="background-color: #C0C0C0">Importe</th>
+            </tr>
+            % for row in datos.listacomisiones:
+                <tr style="text-align:center">
+                  <td style="text-align:center; ">
+                    ${row["movimiento"]}
+                  </td>
+                   <td style="text-align:center">
+                    ${row["documento"]}
+                  </td>
+                   <td style="text-align:center">
+                    ${row["inmueble"]} 
+                  </td>
+                   <td style="text-align:center; ">
+                    ${row["cuenta"]}
+                  </td>
+                  </td>
+                   <td style="text-align:center;">
+                    ${row["manzana"]}
+                  </td>
+                   <td style="text-align:center; ">
+                    ${row["lote"]}
+                  </td>
+                   <td style="text-align:center; ">
+                    ${row["importe"]}
+                  </td>
+              </tr>
+              <tr style="border-bottom:1pt solid black;"> 
+                <td colspan="4">
+                  Etapa: ${row["etapa"]}
+                </td> 
+                 <td colspan="5">
+                    Cliente: ${row["nombrecliente"]}
+                  </td>
+              </tr>
+            % endfor
+        </table>
+  
+      <body></body></html>

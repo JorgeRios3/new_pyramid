@@ -1,0 +1,97 @@
+<html>
+<head>
+</head>
+<body>
+<TABLE> 
+  <!--<CAPTION>
+    <EM>A test table with merged cells</EM></CAPTION>-->
+<TR>
+  <TH rowspan="2">
+    <img width=150 height=130 src="LogoIclar.jpg">
+    <TH colspan="2"><BR><BR>DESARROLLADORA URBANA INTEGRAL DE OCCIENTE S.A. DE C.V.
+      <BR><BR>
+      ${datos.desarrollo}
+    <TH rowspan="2">
+      <BR>
+      <BR>
+        <BR>
+
+<TR><TH>
+<TR><TH>
+</TABLE>
+<div style="text-align: right">Fecha de Cancelaci&#243;n: ${datos.fecha}</div>
+<table  margin-left="20px"  width="410"    cellpadding="25">
+  <tr>
+    <td>
+  <table id="tabla_lista" width="610">
+     <thead>
+    <tr>
+      <th style="margin:10px; align:center"></th>
+      <th style="margin:10px; align:center"></th>
+      
+    </tr>
+  </thead>
+
+    <tr style="text-align: center;">
+      <td style="text-align: left;">Cuenta: ${datos.cuenta}<br>
+        Cliente: ${datos.cliente}<br>
+        Inmueble: ${datos.inmueble}
+      </td>
+      <td style="text-align: left;">Nombre de Cliente: ${datos.nombre}<br>
+        Id. Inmueble: ${datos.iden2} ${datos.iden1}
+      </td>
+  </tr>
+  </table>
+  </td>
+</tr>
+</table>
+
+<p></p>
+<br></br>
+<br></br>
+<br></br>
+<table  align="center"  border="1" width="410"    cellpadding="25">
+  <tr>
+    <td>
+  <table align="center" id="tabla_lista" width="410">
+     <thead>
+    <tr>
+      <th style="margin:10px; align:center">Recibo</th>
+      <th style="margin:10px; align:center">Cantidad</th>
+      <th style="margin:10px; align:center">Descripci&#243;n</th>
+      <th style="margin:10px; align:center">Fecha de Pago</th>
+      <th style="margin:10px; align:center">Documento</th>
+    </tr>
+  </thead>
+    % for row in datos.listaDocumentos:
+    <tr style="text-align: center;">
+      <td style="text-align: center; border-bottom: solid;">${row["recibo"]}</td>
+      <td style="text-align: center;">${row["cantidad"]}</td>
+      <td style="text-align: center;">${row["descripcion"]}</td>
+      <td style="text-align: center;">${row["fechaPago"]}</td>
+      <td style="text-align: center;">${row["documento"]}</td>
+    </tr>
+    <tr><td colspan="5" align="center">___________________________________________________________________________________</td></tr>
+   % endfor
+  </table>
+  </td>
+</tr>
+</table>
+  <br></br>
+  <div align="right" style="padding-right:80px">
+    Total a Cancelar: ${datos.total}
+  </div>
+  
+
+  <br><br>
+  <br><br>
+  <br><br>
+  <br><br>
+  <br><br>
+  <br><br>
+  <div align="right" style="padding-right:80px">Elaboro ${datos.elaboro}</div>
+
+  <div>
+</div>
+<body>
+</html>

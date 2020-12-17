@@ -1,0 +1,65 @@
+<html>
+<style>
+
+
+</style>
+<body>
+<TABLE> 
+  <!--<CAPTION>
+    <EM>A test table with merged cells</EM></CAPTION>-->
+<TR>
+  <TH rowspan="2">
+    <img width=150 height=130 src="zen/report/img/LogoIclar.jpg">
+    <TH colspan="2"><BR><BR>DESARROLLADORA URBANA INTEGRAL S.A. DE C.V.
+      <BR><BR>
+      ANEXO 1
+    <TH rowspan="2">
+      <BR>
+      <BR>
+        <BR>${datos.fecha}
+
+<TR><TH>
+<TR><TH>
+</TABLE>
+<big><p>Estoy de acuerdo en que la ubicacion de la vivienda que oferte comprar en el Conjunto Habitacional ${datos.etapanombre}, sea</p></big>
+
+<p></p>
+<br></br>
+<br></br>
+<div style="text-align:center">
+  <p>MANZANA: ${datos.iden2}</p>
+  <p>LOTE: ${datos.iden1}</p>
+</div>
+<p></p>
+<br></br>
+<br></br>
+<br></br>
+<table border="1" width="210"  align="center"  cellpadding="10">
+  <tr>
+    <td>
+  <table id="tabla_lista" align="center" width="200">
+    <tr><td >Apartado<td align="right">${datos.apartados}</td></tr>
+    <tr><td >Descuento<td align="right">${datos.abonos}</td></tr>
+    <tr><td >Precal. Bruta<td align="right">${datos.precalificacion}</td></tr>
+    <tr><td >Avaluo e impuesto<td align="right">${datos.avaluo}</td></tr>
+    <tr><td >Subsidios<td align="right">${datos.subsidio}</td></tr>
+    <tr><td >Prerecibos<td align="right">${datos.prerecibos}</td></tr>
+    <tr><td >Pagare<td align="right">${datos.pagare}</td></tr>
+  </table>
+  </td>
+</tr>
+</table>
+  <br></br>
+  <br></br>
+  <br></br>
+  <br></br>
+  <br></br>
+  <p align="center">ATENTAMENTE</p>
+  <br></br>
+  <p align="center">_____________________________________</p>
+  <p align="center">${datos.nombre}</p>
+
+  <div>
+</div>
+<body>
+</html>

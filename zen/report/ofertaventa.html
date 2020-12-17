@@ -1,0 +1,69 @@
+<html>
+	<style> 
+	@page {
+	margin: 1cm;
+	size:letter landscape;
+	margin-bottom: 2.5cm;
+		@frame header {
+			-pdf-frame-content: footerContent;
+			bottom: .5cm;
+			margin-left: 1cm;
+			margin-right: 1cm;
+			height: 1cm;
+		}
+	}
+	
+	</style>
+	<body>
+		
+		<table repeat="3" style="text-aling:center; font-style: italic; font-weight: bold; width: 100%;">
+			<tr>
+	  				<td align="center" colspan="7">
+	  				 <IMG SRC="zen/report/img/LogoIclar.jpg" NAME="Logo" ALIGN=LEFT  WIDTH=75 HEIGHT=65 BORDER=0>      
+			  			<br>
+			  			${datos.etapa_descripcion} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Fecha:  <span style="font-weight: bold;">&nbsp; ${datos.hoy}</span>
+	  				</td>	 
+	  		</tr>
+	  		<tr></tr>
+			<tr style="border-bottom: 1pt solid black; margin-bottom:1pt" >
+					<th>Oferta</th>
+					<th>Fecha Oferta</th>
+					<th>Fecha Cancelacion</th>
+					<th>Nombre Cliente</th>
+					<th>Telefono</th>
+					<th>Gerente</th>
+					<th>Vendedor</th>
+				</tr>
+			% for row in datos.rows:
+					<tr style="text-align:center; margin:5px">
+	        			<td style="text-align:center">
+	        		 		${row["oferta"]}
+	        			</td>
+	        			<td style="text-align:center">
+							${row["fecha_oferta"]}
+	        			</td>
+	        			<td style="text-align:center">
+							${row["fecha_cancelacion"]}
+	        			</td>
+	        			<td style="text-align:center">
+							${row["nombre_cliente"]}
+	        			</td>
+	        			<td style="text-align:center">
+							${row["telefono"]}
+	        			</td>
+	        			<td style="text-align:center">
+							${row["nombre_gerente"]}
+	        			</td>
+	        			<td style="text-align:center">
+							${row["nombre_subvendedor"]}
+	        			</td>
+					</tr>
+			% endfor
+		</table>
+		<div id="footerContent">
+			<div style="text-align:center">
+				 Pag.<pdf:pagenumber />
+			</div>
+		</div>
+	</body>
+</html>

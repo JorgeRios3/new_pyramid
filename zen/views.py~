@@ -1,0 +1,507 @@
+#!/bin/env python
+# -*- coding: iso-8859-15 -*-
+
+from cornice.resource import resource, view
+from models import ( 
+     DBSession, Mfa_User, CuentaPagare, Cuenta, Documento, 
+     DocumentoPagare, ReciboPagare, MovimientoPagare, Inmueble )
+from traceback import print_exc
+from pyramid.response import Response
+from pyramid.httpexceptions import HTTPFound
+from pyramid.view import view_config
+import transaction
+from utils import aletras
+from datetime import datetime
+import json
+import rethinkdb as rdb
+from urllib2 import urlopen
+from expiringdict import ExpiringDict
+
+RETHINKDB_HOST = "10.0.1.93"
+RETHINKDB_PORT = 28015
+rdb.connect(RETHINKDB_HOST, RETHINKDB_PORT ).repl()
+
+
+def record(row):
+	return dict( id = row.id, extended = row.extended, author = row.author, title = row.title, intro = row.intro , published_at = row.publishedAt.isoformat() )
+
+def raiz( request ):
+	return HTTPFound(location='app/index.html')
+
+def dec_enc( what ):
+	return what.decode("iso-8859-1").encode("utf-8")
+
+def saldosclientes(request):
+	sqlx = DBSession.execute
+	sql = "select c.codigo as cuenta, c.fk_cliente as cliente, i.codigo as inmueble, i.fk_etapa as et, d.descripcion as desarrollo, e.descripcion as etapa, c.saldo as saldo, k.nombre as nombre_cliente, i.iden1 as manzana, i.iden2 as lote, dd.saldo as saldo13, dd.cargo as cargo13, dd.abono as abono13 from cuenta c join ( select fk_cuenta, saldo,cargo, abono from documento where fk_tipo = 13 ) dd on c.codigo = dd.fk_cuenta join inmueble i on c.fk_inmueble = i.codigo join cliente k on c.fk_cliente = k.codigo join etapa e on i.fk_etapa = e.codigo join desarrollo d on e.fk_desarrollo = d.codigo where  i.fk_etapa >= 45 order by i.fk_etapa, k.nombre"
+	lista = []
+	try:
+		with open("/home/smartics/saldosclientes.csv", "w") as f:
+			f.write("CUENTA,CLIENTE,INMUEBLE,ET,DESARROLLO,ETAPA,SALDO,CLIENTE,MANZANA,LOTE,SALDO13,CAROG13,ABONO13\n") 
+			for row in sqlx( sql ):
+				lista.append( dict( cuenta = row.cuenta, cliente = row.cliente, inmueble = row.inmueble, et = row.et, desarrollo = dec_enc( row.desarrollo), etapa = dec_enc( row.etapa ), saldo = row.saldo, nombre_cliente = dec_enc( row.nombre_cliente ), manzana = row.manzana, lote = row.lote, saldo13 = row.saldo13))
+				f.write("{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(row.cuenta,row.cliente, row.inmueble,row.et, dec_enc(row.desarrollo), dec_enc(row.etapa), row.saldo, dec_enc(row.nombre_cliente), row.manzana, row.lote, row.saldo13, row.cargo13, row.abono13))
+	except:
+		print_exc()
+		dict( error = "error")
+	print "son ", len(lista)
+	return dict( datos = lista )
+
+def datos_cancelacion_pagare(documento, consdesarrollo, cantidad=0):
+	sqlx = DBSession.execute
+	sql = "select saldo, abono, fk_cuenta from documento_pagare where codigo = {}".format( documento )
+	hayDocumentoPagare = False 
+	for row in sqlx( sql ):
+		dp_codigo = documento
+		dp_saldo = row.saldo
+		dp_abono = row.abono
+		dp_fkcuenta = row.fk_cuenta
+		hayDocumentoPagare = True
+	assert hayDocumentoPagare, "No hay documento_pagare"
+	print dp_saldo, dp_abono, dp_fkcuenta
+	
+	sql = "select codigo from movimiento_pagare where fk_documento = {}  and cargoabono = 'A'".format( documento)
+	mp_codigo = 0
+	if cantidad > 0:
+		sql = " {} and cantidad = {}".format(sql , cantidad )
+	hayMovimientoPagare = False
+	for row in sqlx( sql ):
+		mp_codigo = row.codigo
+		hayMovimientoPagare = True
+
+	if hayMovimientoPagare:
+		print "mp_codigo", mp_codigo
+	
+	sql = "select saldo, fk_documento from cuenta_pagare where codigo = {}".format(  dp_fkcuenta  ) 
+	hayCuentaPagare = False
+	for row in sqlx( sql ):
+		cp_saldo = row.saldo
+		cp_fkdocumento = row.fk_documento
+		hayCuentaPagare = True
+	assert hayCuentaPagare, "No hay cuenta_pagare"
+	print cp_saldo, cp_fkdocumento
+
+	sql = "select fk_cuenta, saldo, abono  from documento where codigo = {}".format( cp_fkdocumento )
+	hayDocumento  = False
+	for row in sqlx( sql ):
+		d_fkcuenta = row.fk_cuenta
+		d_saldo = row.saldo
+		d_abono = row.abono
+		hayDocumento = True
+	assert hayDocumento, "No hay documento"
+	print "docuemnto", d_fkcuenta, d_saldo, d_abono
+
+
+	sql = "select codigo, saldo, fk_inmueble from cuenta where codigo = {}".format( d_fkcuenta )
+	hayCuenta = False
+	for row in sqlx( sql ):
+		c_codigo = row.codigo
+		c_saldo = row.saldo
+		c_fkinmueble = row.fk_inmueble
+
+		hayCuenta = True
+	assert hayCuenta, "No hay cuenta"
+	print "cuenta", c_codigo, c_saldo, c_fkinmueble
+
+	sql = "select i.codigo as inmueble, e.codigo as etapa, e.fk_desarrollo as desarrollo from inmueble i join etapa e on i.fk_etapa = e.codigo where i.codigo = {}".format( c_fkinmueble )
+	hayInmueble = False
+	for row in sqlx( sql ):
+		i_codigo = row.inmueble
+		i_etapa = row.etapa
+		i_desarrollo = row.desarrollo 
+		hayInmueble = True
+	assert hayInmueble, "No hay inmueble"
+	print "inmueble", i_codigo, i_etapa, i_desarrollo
+
+	sql = "select codigo, abonocapital from recibo where consdesarrollo = {} and fk_desarrollo = {}".format(consdesarrollo, i_desarrollo)
+	hayRecibo = False
+	for row in sqlx( sql ):
+		r_codigo = row.codigo
+		r_abonocapital = row.abonocapital
+		hayRecibo = True
+	assert hayRecibo, "No hay recibo"
+	print "recibo", r_codigo, r_abonocapital
+
+	sql = "select codigo, abonocapital from recibo_pagare where consdesarrollo = {} and fk_desarrollo = {}".format(consdesarrollo, i_desarrollo)
+	hayReciboPagare = False
+	for row in sqlx( sql ):
+		rp_codigo = row.codigo
+		rp_abonocapital = row.abonocapital
+		hayReciboPagare = True
+	assert hayReciboPagare, "No hay recibo_pagare"
+	sql = "select codigo from movimiento where cargoabono = 'A' and fk_documento = {} and numrecibo = {}".format( cp_fkdocumento, r_codigo )
+	hayMovimiento = False
+	for row in sqlx( sql ):
+		m_codigo = row.codigo
+		hayMovimiento = True
+	assert hayMovimiento, "No hay movimiento"
+	return dict( rp_codigo = rp_codigo, rp_abonocapital = rp_abonocapital, r_codigo = r_codigo, r_abonocapital = r_abonocapital, i_codigo = i_codigo, i_etapa = i_etapa, i_desarrollo = i_desarrollo, c_codigo = c_codigo, c_saldo = c_saldo, c_fkinmueble = c_fkinmueble, d_fkcuenta = d_fkcuenta , d_saldo = d_saldo, d_abono = d_abono, cp_saldo = cp_saldo, cp_fkdocumento = cp_fkdocumento, mp_codigo = mp_codigo, dp_saldo = dp_saldo, dp_abono = dp_abono, dp_fkcuenta = dp_fkcuenta, dp_codigo = dp_codigo , m_codigo = m_codigo)
+
+def ayp( lista , valor ):
+	lista.append( valor )
+	print valor
+	return
+		
+def cancelacionpagare( request ):
+	try:
+		lista = []
+		rp = request.params
+		d = datos_cancelacion_pagare( rp["d"], rp["c"], rp["q"])
+		sql = "delete recibo_pagare where codigo = {}".format( d.get("rp_codigo") )
+		ayp( lista, sql )
+		if d.get("mp_codigo") > 0:
+			sql = "delete movimiento_pagare where codigo = {}".format( d.get("mp_codigo"))
+			ayp( lista, sql )
+		sql = "update documento_pagare set saldo = saldo + {}, abono = abono - {} where codigo = {}".format( d.get("rp_abonocapital"), d.get("rp_abonocapital"), d.get("dp_codigo"))
+		ayp( lista, sql )
+		sql = "update cuenta_pagare set saldo = saldo + {} where codigo = {}".format(d.get("rp_abonocapital"), d.get("dp_fkcuenta"))
+		ayp(lista,sql)
+		sql = "delete recibo where codigo = {}".format( d.get("r_codigo"))
+		ayp( lista,sql )
+		sql = "delete movimiento where codigo = {}".format(d.get("m_codigo"))
+		ayp( lista,sql)
+		sql = "update documento set saldo = saldo + {}, abono = abono - {} where codigo = {}".format(d.get("r_abonocapital"), d.get("r_abonocapital"), d.get("cp_fkdocumento"))
+		ayp(lista,sql)
+		sql = "update cuenta set saldo = saldo + {} where codigo = {}".format(d.get("r_abonocapital"), d.get("d_fkcuenta"))
+		ayp( lista, sql )
+		if rp.get("can","") == "1":
+			c = DBSession.connection().connection
+			cu = c.cursor()
+			print "los queries son "
+			try:
+				for x in lista:
+					#with transaction.manager:
+					#sql = "insert into chutame2( nombre ) values ('{}')".format( x )
+					sql = x
+					print sql
+
+					cu.execute(sql)
+					#DBSession.flush()
+				c.commit()
+			except Error, e:
+				c.rollback()
+				print_exc()
+				raise
+			
+			return dict( cancelado = 1 )
+		return  d 
+		
+	except:
+		print_exc()
+		return dict( error = "error" )
+
+def resumen( ):
+	#r = urlopen("https://mobile.grupoiclar.com/resumenoperativo.mobile").read()
+	#c = json.loads( r )
+	try:
+		foo = rdb.db("iclar").table("historia_resumen").order_by(rdb.desc("fecha")).limit(1).run()
+		for x in foo:
+			c = x
+		#print "vuelta"
+	except:
+		print_exc()
+	lista = []
+	cont = 1
+	d = dict()
+	d["id"] = 1
+	d["tipo"] = "Corte al"
+	d["descripcion"] = c["fecha"] 
+	d["cantidad"] = ""
+	lista.append( d )
+	for x in c["kvalores"]:
+		g = c["valores"][str(x)]
+		d = dict()
+		cont += 1
+		d["id"] = cont
+		d["tipo"] = g[str(0)]
+		d["descripcion"] = g[str(-1)]
+		d["cantidad"] = "{:,d}".format(g[str(-2)])
+		lista.append( d )
+	return lista
+
+def saldoglobal( request ):
+	formato_comas = "{:,.2f}"
+	saldo = formato_comas.format(CuentaPagare.saldoglobal())
+	saldo2 = formato_comas.format(Documento.saldoglobal())
+	saldobase = float(request.params.get("saldo", 0 ))
+	print "Morosos", DocumentoPagare.morosos()
+	print "Implicados", DocumentoPagare.implicados()
+	print saldo, saldo2
+	print DocumentoPagare.vencido_a(1)
+	print DocumentoPagare.vencido_a(30)
+	print DocumentoPagare.vencido_a(60)
+	print DocumentoPagare.vencido_a(90)
+	return Response ( "Saldo en cuenta_pagare es : {}\nSaldo en doctos 17 es: {}\nDeudores : {}\nCon saldo: {}".format(saldo, saldo2, Documento.deudores(), Cuenta.consaldo( saldobase )))
+
+class Auth( object ):
+	def auth( self, content = None ):
+		"""
+			content servira para preguntar si hay que extraer del json embebido alguna estructura
+			con dicho nombre...
+			Ej.  que, dic = self.auth( u"buroinfo" )
+			if not que:
+				#aqui se supone que el methodo auth preparo el error 401
+				return dic
+		"""
+		token = ""
+        
+        	try:
+			token = self.request.headers.get("authorization", "")
+        	except:
+            		print_exc()
+            
+		try:
+			assert str(token) in cached_results.dicAuthToken, "token invalido"
+		except AssertionError,e:
+            		print_exc()
+			self.request.response.status = 401
+			return  ( False, dict() )
+		if content:
+			return ( True, json.get(content) )
+		return ( True, dict ())
+
+
+@resource( collection_path='api/resumens', path='api/resumens/{id}')
+class Resumen( object ):
+	def __init__(self, request):
+		self.request = request
+
+	def collection_get(self):
+		print "somebody calling resumens"
+		return {'resumens': resumen() } 
+    
+@resource( collection_path='api/zenversions', path='api/zenversions/{id}')
+class Zenversion( Auth ):
+	def __init__(self, request):
+		self.request = request
+        
+	@view(renderer='json')
+	def get(self):
+        	que, record = self.auth()
+        	if not que:
+            		return record
+
+        	return dict( zenversion = dict( id = "1", version = "2014050701" ))
+
+@resource( collection_path='api/cuentapagares', path='api/cuentapagares/{id}')
+class CuentaPagares(object):
+	def __init__(self, request):
+		self.request = request
+
+	def collection_get(self):
+		print "somebody calling this"
+		return {'cuentapagares': [ x.cornice_json for x in DBSession.query ( CuentaPagare).order_by(CuentaPagare.codigo).all() ] }
+
+	@view(renderer='json')
+	def get(self):
+		try:
+			#row = DBSession.query( Mfa_User ).get(int(self.request.matchdict['id']))
+			row = DBSession.query( CuentaPagare ).get( int( self.request.matchdict['id']))
+			return row.cornice_json
+		except:
+			print_exc()
+			return dict() 
+
+@resource(collection_path='api/pesos', path='api/pesos/{id}')
+class Pesos(object):
+	def __init__(self, request):
+		self.request = request
+
+	@view(renderer='json')
+	def get(self):
+		id = int(self.request.matchdict['id'])  
+		que = id / 100.0 
+		formato_comas = "{:,.2f}"
+		cual = aletras( que )
+		return dict( id = id, texto = cual.encode("UTF-8"), importeformateado = formato_comas.format( que ) )
+
+@resource(collection_path='api/globals', path='api/globals/{id}')
+class Globales(object):
+	def __init__(self, request):
+		self.request = request
+		def cual( que ):
+			return len(que) + 1
+		g= []
+		#CuentaPagare.all_alterno()
+		hoy = datetime.now().isoformat()
+		g.append( dict( id = cual(g) , descripcion = hoy, importe = 0, importeformateado = "", importeletras = ""))
+		formateo = "{:,.2f}"
+		saldo = CuentaPagare.saldoglobal()
+		g.append( dict( id = cual(g) , descripcion = "Saldo Pagare", importe = saldo, importeformateado = formateo.format(saldo), importeletras = aletras( saldo )))
+		saldo = Documento.saldoglobal()
+		g.append( dict( id = cual(g), descripcion = "Saldo en Documentos tipo 17", importe = saldo, importeformateado = formateo.format(saldo) , importeletras = aletras(saldo)))
+		deudores = Documento.deudores()
+		g.append( dict( id = cual(g), descripcion = "Clientes con pagares con saldo", importe = deudores, importeformateado = str(deudores), importeletras = aletras(deudores, tipo = "numero")))
+		consaldo = Cuenta.consaldo(0)
+		g.append( dict( id = cual(g), descripcion = "Clientes con saldo", importe = consaldo, importeformateado = str(consaldo), importeletras = aletras(consaldo, tipo = "numero")))
+		consaldo = Cuenta.consaldo(100000)
+		g.append( dict( id = cual(g), descripcion = "Clientes con saldo > 100000", importe = consaldo, importeformateado = str(consaldo), importeletras = aletras(consaldo, tipo = "numero")))
+		sumasaldos = Cuenta.sumasaldos()
+		g.append( dict( id = cual(g), descripcion = "Suma de saldos", importe = sumasaldos, importeformateado = formateo.format(sumasaldos), importeletras = aletras(sumasaldos, tipo = "numero")))
+		sumasaldos = Cuenta.sumasaldos(cualquiera = False, sinasignar = True)
+		g.append( dict( id = cual(g), descripcion = "Suma de saldos de clientes sin vivienda", importe = sumasaldos, importeformateado = formateo.format(sumasaldos), importeletras = aletras(sumasaldos, tipo = "numero")))
+		vencido = DocumentoPagare.vencido_a( 1 )
+		total = vencido
+		g.append( dict( id = cual(g), descripcion = "Cartera Vencida", importe = total, importeformateado = formateo.format(vencido), importeletras = aletras( vencido)))
+		vencido = DocumentoPagare.vencido_a( 30 )
+		vencidomenosde30 = total - vencido
+		vencido30omas = vencido
+		vencido60omas  = DocumentoPagare.vencido_a( 60 )
+		vencido30a59 = vencido30omas - vencido60omas
+		vencido90omas = DocumentoPagare.vencido_a( 90 )
+		vencido60a89 = vencido60omas - vencido90omas
+		vencido = vencido90omas
+		g.append( dict( id = cual(g), descripcion = "Cartera Vencida menos de 30 dias", importe = vencidomenosde30, importeformateado = formateo.format(vencidomenosde30), importeletras = aletras( vencidomenosde30)))
+		g.append( dict( id = cual(g), descripcion = "Cartera Vencida 30 a 59 dias", importe = vencido30a59, importeformateado = formateo.format(vencido30a59), importeletras = aletras( vencido30a59)))
+		g.append( dict( id = cual(g), descripcion = "Cartera Vencida 60 a 89 dias", importe = vencido60a89, importeformateado = formateo.format(vencido60a89), importeletras = aletras( vencido60a89)))
+		g.append( dict( id = cual(g), descripcion = "Cartera Vencida 90 o mas dias", importe = vencido, importeformateado = formateo.format(vencido), importeletras = aletras( vencido)))
+		morosos = DocumentoPagare.morosos()
+		g.append( dict( id = cual(g), descripcion = "Clientes con pagares vencidos", importe = morosos, importeformateado = str(morosos), importeletras = aletras( morosos, tipo = "numero" )))
+		abonado = DocumentoPagare.abonado()
+		g.append( dict( id = cual(g), descripcion = "Abonado a Pagares", importe = abonado, importeformateado = formateo.format(abonado), importeletras = aletras( abonado )))
+		self.globales = g
+
+	def collection_get(self):
+		#print "alguien pide"
+		#print self.globales
+		return { 'globals': self.globales }
+
+	@view(renderer='json')
+	def get(self):
+		cual = self.globales[int(self.request.matchdict['id']) - 1]
+		return cual
+		
+@resource(collection_path='api/mfausers', path='api/mfausers/{id}')
+class MfaUser(object):
+	def __init__(self, request):
+		self.request = request
+
+	def collection_get(self):
+		return {'mfausers': [ x.cornice_json for x in DBSession.query ( Mfa_User ).all() ] }
+
+	@view(renderer='json')
+	def get(self):
+		try:
+			#row = DBSession.query( Mfa_User ).get(int(self.request.matchdict['id']))
+			row = Mfa_User.byId( int( self.request.matchdict['id']))
+			return row.cornice_json
+		except:
+			print_exc()
+			return dict() 
+	
+
+	@view(renderer='json')	
+	def put(self):
+		print "new record in town"
+		try:
+			id = self.request.matchdict['id']
+		except:
+			pass
+		try:
+			row = self.request.json.get(u"post")
+		except:
+			pass
+		try:
+			print "mfauser", row.keys()
+		except:
+			pass
+
+		return {}
+
+	@view(renderer='json')
+	def put(self):
+		id = self.request.matchdict['id']
+		row = self.request.json.get(u"mfauser")
+		user = row.get(u'active')
+		active  = row.get(u"active")
+		print "PUT", row.keys()
+		try:
+			u = DBSession.query( Mfa_User ).get( id )
+			u.user = user
+			u.active = active
+			DBSession.add( u )
+			DBSession.flush()
+			transaction.commit()
+		except:
+			transaction.abort()
+
+
+		return dict()
+    
+@view_config( route_name = "foo", renderer= "json", request_method = "GET")
+def foo(request):
+    return dict( foo = "bar" )
+
+@view_config( route_name = "routeauth", renderer="json", request_method="POST")
+def routeauth(request):
+    try:
+        token = request.params.get("token", "")
+        route = request.params.get("route", "")
+    except:
+        pass
+    print token, route
+    valid = "1"
+    try:
+        assert token != "", "foo"
+        assert route != "", "foo"
+        print cached_results.dicTokenUser.get(token)
+        assert route in cached_results.dicTokenUser.get(token).get("routes"), "foo"
+    	print token, route
+    except:
+        print_exc()
+        valid = "0"
+        
+    return dict( access = valid )
+@view_config( route_name = "token", renderer="json", request_method="POST")
+def token( request ):
+    #rqj = request.json_body
+    print request.params
+    rqp = request.params
+    email = str( rqp.get(u"username", ""))
+    password = str( rqp.get(u"password", ""))
+    try:
+        assert "" not in ( email, password), "Credenciales vacias"
+    except AssertionError, e:
+        request.response.status = 401
+        return  dict( error = e.args )
+    try:
+        assert rdb.db("iclar").table("usuarios").filter( rdb.row["usuario"] == email.upper()).filter( rdb.row["password"] == password).count().run() == 1, "Credenciales invalidas"
+
+    except AssertionError, e:
+        print_exc()
+        request.response.status = 401
+        return  dict( error = e.args )
+
+    for x in rdb.db("iclar").table("usuarios").filter( rdb.row["usuario"] == email.upper()).filter( rdb.row["password"] == password).run():
+        id_user = int( x["appid"])
+        domains = x["domains"]
+        try:
+            zen_profile = x["zen_profile"]
+        except:
+            zen_profile = ""
+    try:
+        assert zen_profile != "", "Perfil invalido"
+    except AssertionError,e :
+        print_exc()
+        request.response.status = 401
+        return  dict( error = e.args)
+
+    routes = []
+    for x in rdb.db("iclar").table("zen_profiles").filter(rdb.row["profile"] == zen_profile ).run():
+        routes = x["routes"]
+    auth_token = request.session.new_csrf_token()
+    request.session["auth_token"] = auth_token
+    cached_results.dicAuthToken[auth_token] = True
+    cached_results.dicTokenUser[auth_token] = dict( id = id_user, routes = routes )
+
+    request.session["user_id"] = id_user
+    #return dict( user_id = id_user ,  auth_token = auth_token  )
+    return dict( access_token = auth_token )
+
+class CachedResults(object):
+    def __init__(self):
+        self.dicAuthToken = ExpiringDict(max_len = 200, max_age_seconds = 3600 )
+        self.dicTokenUser = dict()
+
+cached_results = CachedResults()
+

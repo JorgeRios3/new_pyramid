@@ -1,0 +1,192 @@
+% if datos.desarrollo:
+	<div style="text-align: center;"><big><span style="font-weight: bold;"><span
+			style="font-family: Arial;"><big>INFORMACION PARA EL DEPOSITO<br>
+			<br>
+			<br>
+			</big></span></span></big>
+			<div style="text-align: right;"><span style="font-family: Arial;"><big>Guadalajara, Jalisco &nbsp; ${datos.fecha}<br>
+			</big></span>
+			<hr style="width: 100%; height: 2px;">
+			<div style="text-align: center;">
+			<table style="text-align: left; width: 976px; height: 244px;" border="0"
+			cellpadding="2" cellspacing="2">
+			<tbody>
+			<tr>
+			<td
+			style="vertical-align: middle; text-align: right; width: 240px;"><big
+			style="font-weight: bold;"><span style="font-family: Arial;">Banco</span>&nbsp;</big>
+			<br>
+			</td>
+			<td style="vertical-align: top;"><big><big><big><span
+			style="font-weight: bold;"><span style="font-family: Arial;">SANTANDER</span></span></big></big></big><br>
+			</td>
+			</tr>
+			<tr>
+			<td
+			style="vertical-align: middle; text-align: right; width: 240px;"><big><span
+			style="font-family: Arial;">Nombre del Servicio</span></big>&nbsp; <br>
+			</td>
+			<td style="vertical-align: top;"><big><big><span
+			style="font-weight: bold; font-family: Arial;">DESARROLLADORA URBANA
+			INTEGRAL, S.A. DE C.V.</span></big></big><br>
+			</td>
+			</tr>
+			<tr>
+			<td
+			style="vertical-align: middle; text-align: right; width: 240px;"><big><span
+			style="font-family: Arial;">Clave del Servicio</span>&nbsp;</big> <br>
+			</td>
+			<td style="vertical-align: top;"><big><big><span
+			style="font-weight: bold;"><span style="font-family: Arial;">5954</span></span></big></big><br>
+			</td>
+			</tr>
+			<tr>
+			<td
+			style="vertical-align: middle; text-align: right; width: 240px;"><big><span
+			style="font-family: Arial;">Referencia</span></big>&nbsp; <br>
+			</td>
+			<td style="vertical-align: top;"><big><big><span
+			style="font-weight: bold;"><span style="font-family: Arial;">${datos.referencia}</span></span></big></big><br>
+			</td>
+			</tr>
+			<tr>
+			<td
+			style="vertical-align: middle; text-align: right; width: 240px;"><big><span
+			style="font-family: Arial;">Nombre del Depositante</span></big>&nbsp; <br>
+			</td>
+			<td style="vertical-align: top;"><big><big
+			style="font-weight: bold;"><span style="font-family: Arial;">${datos.nombre}</span></big></big><br>
+			</td>
+			</tr>
+			<tr>
+			<td style="vertical-align: middle; text-align: right;"><big><span
+			style="font-family: Arial;">Desarrollo</span></big><br>
+			</td>
+			<td style="vertical-align: top;"><big><span
+			style="font-weight: bold;"><span style="font-family: Arial;"><big>${datos.desarrollo}</big></span></span></big>
+			<big style="font-family: Arial;"><big><span
+			style="font-weight: bold;">[${datos.etapa}]</span></big></big><br>
+			</td>
+			</tr>
+			<tr>
+			<td style="vertical-align: middle; text-align: right;"><big><span
+			style="font-family: Arial;">Manzana</span></big><br>
+			</td>
+			<td style="vertical-align: top;"><big><big><span
+			style="font-weight: bold;"><span style="font-family: Arial;">${datos.manzana}</span></span></big></big><br>
+			</td>
+			</tr>
+			<tr>
+			<td style="vertical-align: middle; text-align: right;"><big><span
+			style="font-family: Arial;">Lote</span></big><br>
+			</td>
+			<td style="vertical-align: top;"><big><big><span
+			style="font-weight: bold;"><span style="font-family: Arial;">${datos.lote}</span></span></big></big><br>
+			</td>
+			</tr>
+			<tr>
+			<td
+			style="vertical-align: middle; text-align: right; width: 240px;"><big
+			style="font-weight: bold;"><span style="font-family: Arial;">Total del
+			Deposito M.N.</span></big>&nbsp; <br>
+			</td>
+			<td style="vertical-align: top;"><big><big><big><big><span
+			style="font-weight: bold;"><span style="font-family: Arial;">$</span></span></big></big></big></big><br>
+			</td>
+			</tr>
+			</tbody>
+			</table>
+			<div style="text-align: left;">
+			<hr style="width: 100%; height: 2px;"><big><span
+			style="font-family: Arial;">Notas.-</span></big><br>
+			</div>
+			</div>
+			<br>
+			<span style="font-family: Arial;"></span><big><span
+			style="font-weight: bold;"><span style="font-family: Arial;"></span></span></big></div>
+			</div>
+% endif
+
+% if not datos.desarrollo:
+	<div style="text-align: center;"><big><span style="font-weight: bold;"><span
+			style="font-family: Arial;"><big>INFORMACION PARA EL DEPOSITO<br>
+			<br>
+			<br>
+			</big></span></span></big>
+			<div style="text-align: right;"><span style="font-family: Arial;"><big>Guadalajara, Jalisco &nbsp; ${datos.fecha}<br>
+			</big></span>
+			<hr style="width: 100%; height: 2px;">
+			<div style="text-align: center;">
+			<table style="text-align: left; width: 976px; height: 244px;" border="0"
+			cellpadding="2" cellspacing="2">
+			<tbody>
+			<tr>
+			<td
+			style="vertical-align: middle; text-align: right; width: 240px;"><big
+			style="font-weight: bold;"><span style="font-family: Arial;">Banco</span>&nbsp;</big>
+			<br>
+			</td>
+			<td style="vertical-align: top;"><big><big><big><span
+			style="font-weight: bold;"><span style="font-family: Arial;">SANTANDER</span></span></big></big></big><br>
+			</td>
+			</tr>
+			<tr>
+			<td
+			style="vertical-align: middle; text-align: right; width: 240px;"><big><span
+			style="font-family: Arial;">Nombre del Servicio</span></big>&nbsp; <br>
+			</td>
+			<td style="vertical-align: top;"><big><big><span
+			style="font-weight: bold; font-family: Arial;">DESARROLLADORA URBANA
+			INTEGRAL, S.A. DE C.V.</span></big></big><br>
+			</td>
+			</tr>
+			<tr>
+			<td
+			style="vertical-align: middle; text-align: right; width: 240px;"><big><span
+			style="font-family: Arial;">Clave del Servicio</span>&nbsp;</big> <br>
+			</td>
+			<td style="vertical-align: top;"><big><big><span
+			style="font-weight: bold;"><span style="font-family: Arial;">5954</span></span></big></big><br>
+			</td>
+			</tr>
+			<tr>
+			<td
+			style="vertical-align: middle; text-align: right; width: 240px;"><big><span
+			style="font-family: Arial;">Referencia</span></big>&nbsp; <br>
+			</td>
+			<td style="vertical-align: top;"><big><big><span
+			style="font-weight: bold;"><span style="font-family: Arial;">${datos.referencia}</span></span></big></big><br>
+			</td>
+			</tr>
+			<tr>
+			<td
+			style="vertical-align: middle; text-align: right; width: 240px;"><big><span
+			style="font-family: Arial;">Nombre del Depositante</span></big>&nbsp; <br>
+			</td>
+			<td style="vertical-align: top;"><big><big
+			style="font-weight: bold;"><span style="font-family: Arial;">${datos.nombre}</span></big></big><br>
+			</td>
+			</tr>
+			<tr>
+			<td
+			style="vertical-align: middle; text-align: right; width: 240px;"><big
+			style="font-weight: bold;"><span style="font-family: Arial;">Total del
+			Deposito M.N.</span></big>&nbsp; <br>
+			</td>
+			<td style="vertical-align: middle;"><big><big><big><big><span
+			style="font-weight: bold;"><span style="font-family: Arial;">$</span></span></big></big></big></big><br>
+			</td>
+			</tr>
+			</tbody>
+			</table>
+			<div style="text-align: left;">
+			<hr style="width: 100%; height: 2px;"><big><span
+			style="font-family: Arial;">Notas.-</span></big><br>
+			</div>
+			</div>
+			<br>
+			<span style="font-family: Arial;"></span><big><span
+			style="font-weight: bold;"><span style="font-family: Arial;"></span></span></big></div>
+			</div>
+
+% endif

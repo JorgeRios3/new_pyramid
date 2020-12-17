@@ -1,0 +1,128 @@
+<table  style="width: 993px; height: 200px; text-align: left; margin-left: auto; margin-right: auto;"  border="0" cellpadding="2" cellspacing="2">
+  <tbody>
+  <tr>
+  <td style="text-align: center;"> <IMG SRC="zen/report/img/LogoIclar.jpg" NAME="Logo" ALIGN=LEFT  WIDTH=150 HEIGHT=130 BORDER=0></td>      
+  <td style="text-align: center; vertical-align: middle;">
+  	<big>
+  	<big>        <span style="font-weight: bold;">Desarrolladora Urbana Integral</span><br>
+  				<span style="font-weight: bold;">S.A. de C.V</span>
+  				<br><br><span style="font-weight: bold;">${datos.desarrollo}</span>
+  	</big>
+  	</big>  
+  	<br>
+  </td>   
+  </tr>  
+  </tbody>
+</table>
+<br></br>
+<br></br>
+<div style="text-align: right;">
+	<big>
+	<big>
+		&nbsp;Recibo:  <span style="font-weight: bold;">&nbsp;${datos.recibo}</span></big>
+	</big>  <br>
+</div>
+<hr style="width: 100%; height: 2px;">
+<table  style="width: 985px; height: 82px; text-align: left; margin-left: auto; margin-right: auto;"  border="0" cellpadding="2" cellspacing="2"> 
+	<tbody>
+		<tr>      
+		<td style="text-align: right; width: 190px;">
+			<big>Cuenta:</big>
+		</td>
+		<td style="text-align: left; font-weight: bold; width: 183px;">
+			<big>${datos.cuenta}</big>
+		</td>
+		<td style="text-align: left; width: 190px;">
+			<big>Fecha de Aplicaci&#243;n:</big>
+		</td>
+		<td style="text-align: left; font-weight: bold; width: 183px;">
+			<big>${datos.fechacaptura}</big>
+		</td>  
+		</tr>
+		<tr>       
+		<td style="text-align: right; width: 150px;">
+			<big>Inmueble:</big>
+		</td>      
+		<td style="text-align: rigtht; font-weight: bold; width: 400px;">
+			<big>${datos.iden2} - ${datos.iden1}</big>
+		</td>
+		<td style="text-align: left; width: 150px;">
+			<big>Id del Inmueble:</big>
+		</td>      
+		<td style="text-align: left; font-weight: bold; width: 400px;">
+			<big>${datos.inmueble}</big>
+		</td>
+		</tr>
+		<tr>
+		<td style="text-align: right; width: 150px;">
+			<big>Cliente:</big>
+		</td>      
+		<td style="text-align: left; font-weight: bold; width: 400px;">
+			<big>${datos.cliente}</big>
+		</td>
+		<td style="text-align: left; width: 150px;">
+			<big>Fecha de Pago:</big>
+		</td>      
+		<td style="text-align: left; font-weight: bold; width: 400px;">
+			<big>${datos.fechaemision}</big>
+		</td> 
+		</tr>    
+		<tr>
+			<td style="text-align: right; width: 150px;">
+			<big>Nombre del Cliente:</big>
+		</td>      
+		<td style="text-align: left; font-weight: bold; width: 400px;">
+			<big>${datos.nombrecliente}</big>
+		</td>
+		</tr>
+		<tr styyle="text-align:center;">
+			<td style="text-align: right; width: 150px;">
+			<big>Saldo Actual:</big>
+		</td>      
+		<td style="text-align: left; font-weight: bold; width: 400px;">
+			<big>$ ${datos.saldoactual}</big>
+		</td>
+		<td style="text-align: left; width: 150px;">
+			<big>Saldo Posterior:</big>
+		</td>      
+		<td style="text-align: left; font-weight: bold; width: 400px;">
+			<big>$ ${datos.saldoposterior}</big>
+		</td>
+		</tr>
+		</tbody>
+		</table>
+		<hr style="width: 100%; height: 2px;">
+		<table>
+			<tbody>
+				<tr> <td>Movimiento</td> <td>Importe</td> <td>Mensualidad</td> <td>Mes a Pagar</td> <td>Documento</td> </tr>
+			</tbody>
+		</table>
+		<hr style="width: 100%; height: 2px;">
+		<table>
+			<tbody>
+				% for row in datos.listaMovimientos:
+					<tr> <td>${row["codigo"]}</td> <td>${row["cantidad"]}</td> <td>${row["relaciondepago"]}</td> <td>${row["fechavencimiento"]}</td>
+						<td>${row["documento"]}</td></tr>
+    			% endfor
+			</tbody>
+		</table>
+		<br><br><br><br><br><br><br><br><br><br><br><br>
+		<div style="text-align: right;"><span style="font-family: Arial; font-size:12px;"><big>Pago a Capital: &nbsp; $ ${datos.abonocapital}<br>
+		<div style="text-align: right;"><span style="font-family: Arial; font-size:12px;"><big>Intereses Moratorios: &nbsp; $ ${datos.interesmoratorio}<br>
+		<div style="text-align: right;"><span style="font-family: Arial; font-size:12px;"><big>Total a Pagar: &nbsp; $ ${datos.totalrecibo}<br>
+		<hr style="width: 100%; height: 2px;">
+		<div>Referencia: Ninguna</div>
+		<div style="text-align: right;">Id. del Recibo: ${datos.recibo}</div>
+		<div style="text-align: center;">Firma del Cajero</div>
+		<hr style="width: 100%; height: 2px;">
+		<div style="text-align: left; font-size:12px;">Observaciones
+			<p>
+				1) El pago deber&#225; hacerse con deposito bancario seg	&#250;n la referencia que le corresponda a su vivienda.<br>
+				2) El horario de oficina es de 9:00 a 19:30 horas de lunes a sabado.<br>
+				3) Si el d&#237;a de vencimiento es inh&#225;bil bancario, el pago deber&#225; hacerse el dia h&#225;bil inmediato anterior.<br>
+				4) Los itereses moratorios se calculan a la fecha de corte de &#233;ste estado de cuenta.<br>
+				5) Favor de pagar con cheque cruzado a nombre de Desarrolladora Urbana Integral, S.A. de C.V. y &#233;ste recibo causar&#225; efecto salvo buen cobro del cheque.
+			</p>
+	    </div>
+	
+			<body></body></html>
