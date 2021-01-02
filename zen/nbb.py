@@ -12,7 +12,7 @@ from datetime import datetime
 #else:
 #	db = 0
 
-host, port, db  = "10.0.1.107", 6379, 0
+host, port, db  = "127.0.0.1", 6380, 0
 #if args.server:
 #	host = args.server
 

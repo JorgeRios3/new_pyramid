@@ -27,7 +27,7 @@ def start(prod=False):
     db = 1
     if prod:
         db = 8
-    r = redis.Redis(host = "10.0.1.124", port = 6379, db = db )
+    r = redis.Redis(host = "127.0.0.1", port = 6379, db = db )
 
 def nbb_process_request(func = "dummy", source = "test", user = "test", arguments = None, msgpack = False):
 	k = r.incr("{}-nbb-key".format(PREFIX))

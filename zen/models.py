@@ -548,7 +548,7 @@ class Vendedor( Base ):
 
 	@property
 	def cornice_json(self):
-		return dict( id = self.id, nombre = d_e(self.nombre), gerente = self.gerente)
+		return dict( id = self.id, nombre = self.nombre, gerente = self.gerente)
 	
 class MedioPublicitario( Base ):
 	__tablename__ = "gixmediospublicitarios"

@@ -47,7 +47,7 @@ import uuid
 from .graficos import *
 import datetime as tiempo
 
-redis_host, redis_port, redis_db  = "10.0.1.124", 6379, 5
+redis_host, redis_port, redis_db  = "127.0.0.1", 6379, 5
 redis_conn = None
 formato_comas = "{:,.2f}"
 
@@ -92,7 +92,7 @@ def anyrequest( event ):
 	req = "{}.{} {}".format(soy, today(), event.request.path_qs)
 	color( req, 'c' )
 	#c = redis.Redis(host = s.get("redis.host"), port = s.get("redis.port"), db = 0 )
-	c = redis.Redis(host = "10.0.1.124", port = 6379, db = 8 )
+	c = redis.Redis(host = "127.0.0.1", port = 6379, db = 8 )
 	c.publish("pyramid.request", req)
 	#c.set("pyramid.request", req)
 	#c.set(req,1)
@@ -114,21 +114,21 @@ def arranque( event ):
 	global redis_conn
 	settings = event.app.registry.settings
 	cached = cached_results.settings
-	redis_host = "10.0.1.124" #settings.get("redis.host","")
-	redis_port =  6379 #int(settings.get("redis.port", ""))
-	redis_db = 5  #int(settings.get("redis.db", ""))
+	redis_host = settings.get("redis.host","")
+	redis_port = int(settings.get("redis.port", ""))
+	redis_db = int(settings.get("redis.db", ""))
 	try:
 		assert cloudSpooler, "No esta cloudSpooler"
 		assert redis_host and redis_port and redis_db, "Faltan parametros en el ini sobre el redis"
 	except:
 		print_exc()
 
-	cached["rethinkdb.host"] = "127.0.0.1" #settings.get("rethinkdb.host")
-	cached["rethinkdb.port"] = 28015 #settings.get("rethinkdb.port")
-	cached["sqlalchemy.url"] = "mssql://iclarusergi:iclaruserxyz@ICLARODBCGOOD" #settings.get("sqlalchemy.url")
-	cached["redis.host"] = "10.0.1.124" #settings.get("redis.host")
-	cached["redis.port"] = 6379 #settings.get("redis.port")
-	cached["redis.db"] = 5 #settings.get("redis.db")
+	cached["rethinkdb.host"] = settings.get("rethinkdb.host")
+	cached["rethinkdb.port"] = settings.get("rethinkdb.port")
+	cached["sqlalchemy.url"] = settings.get("sqlalchemy.url")
+	cached["redis.host"] = settings.get("redis.host")
+	cached["redis.port"] = settings.get("redis.port")
+	cached["redis.db"] = settings.get("redis.db")
 
 	if "TEST" in cached["sqlalchemy.url"]:
 		cached["pyraconfig"] = "test"
@@ -151,6 +151,11 @@ def arranque( event ):
 		DBSession2.close()
 	except:
 		color("Error al considerar Arcadia")
+	saldototal = 0
+	for x in DBSession2.execute(preparaQuery(sql)):
+		saldototal = x.saldototal
+	color("Saldo en Arcadia: {}".format(saldototal))
+	DBSession2.close()
 
 	color("enbb checking...")
 
@@ -1348,7 +1353,7 @@ def raiz( request ):
 
 raiz2 = raiz
 
-def dec_enc( what, trim_value = False ):
+def dec_enc( what, trim_value = False, field=None ):
 	if trim_value:
 		what = what.strip()
 	return what.decode("iso-8859-1").encode("utf-8")
@@ -8409,9 +8414,10 @@ def arcadiacuadro(enganche=False):
         #r_year["Total"]= total
 		lista.append(r_year)
 	resultado=[]
-	for mes in meses[1:]:
+	for i, mes in enumerate(meses[1:]):
 		row=dict()
 		row["mes"]=mes
+		row["id"]=i
 		for i, x in enumerate(range(2003, int(tiempo.date.today().year)+1)):
 			row["a{}".format(x)]=lista[i][mes]
 		resultado.append(row)
@@ -9369,7 +9375,7 @@ class PreciosInmuebles(EAuth):
 		resul =[] 
 		try:
 			for x in DBSession.execute( sql ):
-				resul.append( dict ( id = x.id, descripcion = dec_enc(x.descripcion), precio = formato_comas.format(x.precio), sustentable = x.sustentable, etapa = x.etapa, precioraw = x.precio ))
+				resul.append( dict ( id = x.id, descripcion = x.descripcion, precio = formato_comas.format(x.precio), sustentable = x.sustentable, etapa = x.etapa, precioraw = x.precio ))
 		except:
 			print_exc()
 		print(resul)
@@ -9725,7 +9731,7 @@ class EtapasTramites(EAuth):
 		resul =[] 
 		try:
 			for x in DBSession.execute( sql ):
-				resul.append( dict ( id = x.netapa, departamento=x.departamento, nombre = "{} - {}".format(x.desarrollo.decode("iso-8859-1").encode("utf-8"), x.etapa.decode("iso-8859-1").encode("utf-8"))))
+				resul.append( dict ( id = x.netapa, departamento=x.departamento, nombre = "{} - {}".format(x.desarrollo, x.etapa)))
 		except:
 			print_exc()
 		print(resul)
@@ -9762,7 +9768,7 @@ class ManzanasTramites(EAuth):
 		wasAnError = False
 		try:
 			for i,x in enumerate(DBSession.execute( sql ),1):
-				resul.append( dict( id = i, manzana = x.manzana.decode("iso-8859-1").encode("utf-8").strip()))
+				resul.append( dict( id = i, manzana = x.manzana.strip()))
 		except:
 			print_exc()
 			wasAnError = True
@@ -9801,7 +9807,7 @@ class ManzanasDisponibles(EAuth):
 		wasAnError = False
 		try:
 			for i,x in enumerate(DBSession.execute( sql ),1):
-				resul.append( dict( id = i, manzana = x.manzana.decode("iso-8859-1").encode("utf-8").strip()))
+				resul.append( dict( id = i, manzana = x.manzana.strip()))
 		except:
 			print_exc()
 			wasAnError = True
@@ -9849,7 +9855,7 @@ class InmueblesDisponibles(EAuth):
 		    #cu = c.cursor()
 		except:
 			print_exc()
-		resul =  {"inmueblesdisponibles" : [{ "id" : x.codigo, "manzana" : x.manzana.decode("iso-8859-1").encode("utf-8").strip(), "lote" : dec_enc(x.lote, True) } for x in DBSession.execute(sql) ]}
+		resul =  {"inmueblesdisponibles" : [{ "id" : x.codigo, "manzana" : x.manzana.strip(), "lote" : dec_enc(x.lote, True) } for x in DBSession.execute(sql) ]}
 		print("resolviendo query de {} a las {}".format(de,datetime.now().isoformat()))
 		return resul
 		
@@ -9885,7 +9891,7 @@ class InmueblesTramites(EAuth):
 		de = "InmueblesTramites"
 		print("armando query de {} a las {}".format(de,datetime.now().isoformat()))
 		
-		resul =  {"inmueblestramites" : [{ "id" : x.codigo, "manzana" : x.manzana.decode("iso-8859-1").encode("utf-8").strip(), "lote" : dec_enc(x.lote,True) } for x in DBSession.execute(sql) ]}
+		resul =  {"inmueblestramites" : [{ "id" : x.codigo, "manzana" : x.manzana.strip(), "lote" : x.lote } for x in DBSession.execute(sql) ]}
 		print("resolviendo query de {} a las {}".format(de,datetime.now().isoformat()))
 		return resul
 		
@@ -10424,13 +10430,16 @@ class CarteraVencidaArcadiaRest( QueryAndErrors, EAuth):
 				dict(
 					id = i,
 					etapa = x.etapa,
-					manzana = dec_enc(x.manzana),
-					lote = dec_enc(x.lote),
+					manzana = x.manzana,
+					#dec_enc(x.manzana),
+					lote = x.lote,
+					#dec_enc(x.lote),
 					cliente = x.cliente,
 					cuenta = x.cuenta,
-					nombre = dec_enc(x.nombre),
+					nombre = x.nombre,
+					#dec_enc(x.nombre),
 					congelada = x.congelada,
-					saldo = x.saldo
+					saldo = str(x.saldo)
 				)
 			)
 		DBSession2.close()
@@ -10475,11 +10484,14 @@ class InmuebleArcadiaRest( QueryAndErrors, EAuth):
 					dict(
 						id = i,
 						inmueble = x.inmueble,
-						manzana = dec_enc(x.manzana),
-						lote = dec_enc(x.lote),
+						manzana = x.manzana,
+						#dec_enc(x.manzana),
+						lote = x.lote,
+						#dec_enc(x.lote),
 						cuenta = x.cuenta,
 						cliente = x.cliente,
-						nombre = dec_enc(x.nombre)
+						nombre = x.nombre
+						#dec_enc(x.nombre)
 						
 					)
 				)
@@ -10647,7 +10659,6 @@ class LotesIndividualesArcadiaRest( QueryAndErrors, EAuth):
 @resource(collection_path='api/lotespagadosarcadias', path='api/lotespagadosarcadias/{id}')
 class LotesPagadosArcadiaRest(EAuth):
 	def __init__(self, request, context=None):
-		
 		self.request = request
 
 	def collection_get(self):
@@ -10660,6 +10671,88 @@ class LotesPagadosArcadiaRest(EAuth):
 			result.append(dict(id=x[0], etapa=x[0], pagados=x[1], noescriturados=x[2], escriturados=x[3]))
 
 		return dict(lotespagadosarcadias = result)
+
+
+@resource(collection_path='api/vendedoresarcadias', path='api/vendedoresarcadias/{id}')
+class VendedoresArcadiaRest(EAuth):
+	def __init__(self, request, context=None):
+		
+		self.request = request
+	
+
+	def collection_get(self):
+		que, record, token = self.auth(get_token = True)
+		print("valores que, record, token", que, record, token)
+		if not que:
+			return dict(lotesdisponiblesarcadias = [])
+		sql = """select * from vendedor where activo<>0
+		"""
+		resultado = []
+		for i,x in enumerate(DBSession2.execute(preparaQuery(sql)),1):
+			resultado.append(dict(id=i, nombre=x.nombre, codigo=x.codigo))
+		print("cayo aqui")
+		return dict(vendedoresarcadias = resultado )
+
+	def collection_post(self):
+		que, record, token = self.auth(content = "tramite", get_token = True)
+		if not que:
+			return record
+		ses = DBSession2
+		engine = Base.metadata.bind
+		poolconn = engine.connect()
+		cn_sql = poolconn.connection
+		self.cn_sql = cn_sql
+		self.poolconn = poolconn
+		d = dict()
+		user = cached_results.dicTokenUser.get( token, d )
+		usuario = user.get("usuario", "")
+		
+		try:
+			tramite = record.get("tramite")
+			inmueble = record.get("inmueble")
+			
+			assert user.get("perfil", "") in ("admin","comercial","subdireccioncomercial", "subdireccion", "auxiliarsubdireccion", "especialcomercial", "finanzas", "cobranza", "gestionurbana"), "perfil inadecuado"
+			assert usuario, "no hay usuario"
+			assert tramite, "no hay tramite"
+			assert inmueble, "no hay inmueble"
+			
+		
+			sql = u"""
+			insert integracion_fechas(integracion,requisito, fecha_inicio, fecha_entrega, solicitud)
+			values({},{},convert(varchar(10),getdate(),111),convert(varchar(10),getdate(),111),1)
+			
+			""".format(integracion,tramite)
+			sql = self.cleanSql(sql)
+			sql = sql.encode("iso-8859-1")
+			cu = cn_sql.cursor()
+			cu.execute(sql)
+			cn_sql.commit()
+			print("inserting integracion_fechas")
+			try:
+				poolconn.close()
+			except:
+				pass
+			return dict(tramite = dict(id=tramite, tramite=tramite, inmueble= inmueble,
+					 montoCredito=0, montoSubsidio=0, 
+					numeroCredito=0, fechaInicial='',
+					fechaInicio='',
+					 fechaRealEntrega='',
+					 fechaEstEntrega='',
+					fechaVencimiento='',
+					 comentario='', descripcion='', origen = 'g'))
+
+		except AssertionError as e:
+			print_exc()
+			self.request.response.status = 400
+			error = e.args[0]
+			return self.edata_error( error )
+		except:
+			print_exc()
+			self.request.response.status = 400
+			error = "hubo error al grabar"
+			return self.edata_error( error )
+		
+
 
 @resource(collection_path='api/lotesdisponiblesarcadias', path='api/lotesdisponiblesarcadias/{id}')
 class LotesDisponiblesArcadiaRest(EAuth):
@@ -12344,7 +12437,7 @@ def general_token( request, version = 1 ):
 	cr = cached_results
 	gravatar_email = str( rqp.get(u"gravatar_email", ""))
 	#rdb.connect(cr.settings.get("rethinkdb.host"), cr.settings.get("rethinkdb.port")).repl()
-	rdb.connect(cr.settings.get("10.0.1.124"), cr.settings.get("rethinkdb.port")).repl()
+	rdb.connect(cr.settings.get("127.0.0.1"), cr.settings.get("rethinkdb.port")).repl()
 	usuarios = rdb.db("iclar").table("usuarios")
 	gravatar = ""
 	usuarioActivo = False

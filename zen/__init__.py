@@ -9,18 +9,18 @@ from .models import (
     DBSession2,
     Base2
     )
-#redis_host, redis_port, redis_db  = "10.0.1.124", 6379, 5
-#redis_conn  = redis.Redis(host = redis_host, port = redis_port, db = redis_db)
+redis_host, redis_port, redis_db  = "127.0.0.1", 6379, 5
+redis_conn  = redis.Redis(host = redis_host, port = redis_port, db = redis_db)
 
 def main(global_config, **settings):
     pyraconfig = "prod"
     if "TEST" in settings.get("sqlalchemy.url",""):
         pyraconfig = "test"
-    #redis_host = settings.get("redis.host")
-    #redis_port = settings.get("redis.port")
-    #redis_db = settings.get("redis.db")
-    #redis_conn  = redis.Redis(host = redis_host, port = redis_port, db = redis_db)
-    #redis_conn.set("pyraconfig",pyraconfig)
+    redis_host = settings.get("redis.host")
+    redis_port = settings.get("redis.port")
+    redis_db = settings.get("redis.db")
+    redis_conn  = redis.Redis(host = redis_host, port = redis_port, db = redis_db)
+    redis_conn.set("pyraconfig",pyraconfig)
 
     engine = engine_from_config(settings, 'sqlalchemy.')
     engine2 = engine_from_config(settings, 'sqlalchemy2.')
