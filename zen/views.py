@@ -5381,7 +5381,7 @@ class ClienteCuantoFiltro( EAuth, QueryAndErrors ):
 				 """.format(  where_saldo, where_etapa, self.upper(nombre) )
 			
 			sql = preparaQuery( sql )
-			sql = sql.encode("iso-8859-1")
+			#sql = sql.encode("iso-8859-1")
 			engine = Base.metadata.bind
 			poolconn = engine.connect()
 			c = poolconn.connection
@@ -5473,23 +5473,34 @@ class ClienteFiltro( EAuth, QueryAndErrors ):
 				order by cte.nombre """.format( where_saldo, where_etapa, self.upper(nombre) )
 			
 			sql = preparaQuery( sql )
-			sql = sql.encode("iso-8859-1")
-			engine = Base.metadata.bind
-			poolconn = engine.connect()
-			c = poolconn.connection
-			cu = c.cursor()
+			#sql = sql.encode("iso-8859-1")
+			#engine = Base.metadata.bind
+			#poolconn = engine.connect()
+			#c = poolconn.connection
+			#cu = c.cursor()
 			r = []
-			#for i,x in enumerate(DBSession.execute( sql ),1):
-			for i,x in enumerate(cu.execute(sql),1):
-				r.append( dict( id = int(x.cliente), cuenta = int(x.cuenta), nombre = dec_enc(x.nombre), 
-					saldo = x.saldo))
-			cu.close()
-			print(sql)
-			color("se resolvio query clientefiltros {} {}".format(tipo,len(r) ))
-			try:
-				poolconn.close()
-			except:
-				pass
+			company = self.request.params.get("company","")
+			if company:
+				for i,x in enumerate(DBSession2.execute( sql ),1):
+				#for i,x in enumerate(cu.execute(sql),1):
+					r.append( dict( id = int(x.cliente), cuenta = int(x.cuenta), nombre = x.nombre, 
+						saldo = str(x.saldo)))
+				#cu.close()
+				print(sql)
+				color("se resolvio query clientefiltros {} {}".format(tipo,len(r) ))
+			else:
+
+				for i,x in enumerate(DBSession.execute( sql ),1):
+				#for i,x in enumerate(cu.execute(sql),1):
+					r.append( dict( id = int(x.cliente), cuenta = int(x.cuenta), nombre = x.nombre, 
+						saldo = str(x.saldo)))
+				#cu.close()
+				print(sql)
+				color("se resolvio query clientefiltros {} {}".format(tipo,len(r) ))
+			#try:
+			#	poolconn.close()
+			#except:
+			#	pass
 			return dict(clientefiltros = r)
 
 		except:
@@ -6540,7 +6551,11 @@ class ClienteRest( EAuth, QueryAndErrors ):
 		que, record, token = self.auth(get_token = True)
 		if not que:
 			return record
-		return dict()
+		company = self.request.params.get("company", "")
+		if company:
+			return dict(cliente=dict(nombre="si es arcadia"))
+		else:
+			return dict(cliente=dict(nombre="jajaja"))
 
 	def collection_get(self):
 		
@@ -9651,7 +9666,7 @@ class EtapasTramites(EAuth):
 				return record
 
 		todas = self.request.params.get("todas", "")
-		company = self.request.params.get("company","")
+		company = self.request.params.get("company", "")
 		if todas:
 			if company == "arcadia":
 				sql = """
@@ -10672,6 +10687,178 @@ class LotesPagadosArcadiaRest(EAuth):
 
 		return dict(lotespagadosarcadias = result)
 
+@resource(collection_path='api/clientesarcadias', path='api/clientesarcadias/{id}')
+class ClientesArcadiaRest(EAuth):
+	def __init__(self, request, context=None):
+		self.modelo = "clientesarcadia"
+		self.request = request
+	
+	def boolSql(self,value):
+		return -1 if value else 0
+	
+	def conv_fecha(self, f):
+		fecha = ""
+		if f:
+			fecha = "{:04d}/{:02d}/{:02d}".format(f.year,f.month, f.day)
+		return fecha
+		
+	def upper( self, key ):
+		#print( paint.yellow("la llave es {}".format(key)))
+		try:
+			val = self.record[key]
+		except:
+			traceback.print_exc()
+			val = ""
+
+		if not val:
+			return val
+		try:
+			
+			#print ( paint.yellow("a convertir {}".format(key)))
+			decoded = val
+			good = decoded.upper()
+			#print good
+			
+			return good
+		except:
+			print(paint.red("saliendo por error en upper()"))
+			traceback.print_exc()
+			raise ZenError(1)
+	
+	def cleanSql( self, sql ):
+		sql = sql.replace("\n"," ")
+		sql = sql.replace("\t", " ")
+		return sql
+	
+	def get(self):
+		que, record = self.auth()
+		print("entrando en vendedor")
+		if not que:
+			return dict(clientesarcadia = [])
+		cual = int(self.request.matchdict['id'])
+		ses = DBSession2
+		record = dict()
+		for x in ses.execute("select * from cliente where codigo={}".format(cual)):
+			print("viendo record----")
+			print(x)
+			#"codigo, nombre , rfc, nacionalidad , lugardenacimiento,fechadenacimiento       estadocivil     situacion     regimen  ocupacion       domicilio       colonia cp      ciudad  estado  telefonocasa    telefonotrabajo conyugenombre conyugenacionalidad      conyugelugardenacimiento        conyugefechadenacimiento        conyugerfc      conyugeocupacion       contpaq curp    conyugecurp     email"
+			record = dict(id=x.codigo, nombre=x.nombre, rfc=x.rfc, nacionalidad=x.nacionalidad, 
+			lugarnacimiento=x.lugardenacimiento, fechanacimiento=self.conv_fecha(x.fechadenacimiento), estadocivil=x.estadocivil,
+			situacion=x.situacion, regimen=x.regimen, ocupacion=x.ocupacion, domicilio=x.domicilio, colonia=x.colonia,
+			cp=x.cp, ciudad=x.ciudad, estado=x.estado, telefonocasa=x.telefonocasa, telefonotrabajo=x.telefonotrabajo,
+			conyugenombre=x.conyugenombre, conyugecurp=x.conyugecurp, conyugerfc=x.conyugerfc,
+			conyugefechanacimiento=self.conv_fecha(x.conyugefechadenacimiento), conyugelugarnacimiento=x.conyugelugardenacimiento,
+			conyugenacionalidad= x.conyugenacionalidad, conyugeocupacion=x.conyugeocupacion)
+		return dict(clientesarcadia = record)
+	
+
+	def collection_post(self):
+		print("inserting Cliente")
+		que, record, token = self.auth(content = "clientesarcadia", get_token = True)
+		user = cached_results.dicTokenUser.get( token )
+		if not que:
+			return record
+		user = cached_results.dicTokenUser.get( token )
+		usuario = user.get("usuario", "")
+		perfil = user.get("perfil", "")
+		if perfil not in ("admin", "comercial", "subdireccioncomercial"):
+			
+			self.request.response.status = 400
+			error = "perfil no autorizado"
+			return self.edata_error( error)
+		
+		return self.store( record )
+
+	def store( self, record , id = None):
+		print("Voy a generar el cliente")
+		queries = []
+		error = "Pendiente de implementar"
+		ses = DBSession2
+		
+		cliente = 0
+		for x in ses.execute("select max(codigo) + 1 as cliente from cliente"):
+			cliente = x.cliente
+		
+		try:
+			self.record = record
+			for row in sorted(record.keys()):
+				pass
+
+			assert cliente, "no se obtuvo el codigo de cliente correcto"
+			engine = Base2.metadata.bind
+			poolconn = engine.connect()
+			c = poolconn.connection
+			self.poolconn = poolconn
+			
+			conyugefechanacimiento = "NULL"
+			if record["conyugefechanacimiento"]:
+				conyugefechanacimiento = "'{}'".format(record["conyugefechanacimiento"])
+			
+			fechanacimiento = "NULL"
+			if record["fechanacimiento"]:
+				fechanacimiento = "'{}'".format(record["fechanacimiento"])
+			cu = c.cursor()
+			sql = u"""
+			insert into cliente(codigo, nombre, rfc, nacionalidad, lugardenacimiento, 
+				fechadenacimiento, estadocivil, situacion, regimen, ocupacion, domicilio, colonia, cp, 
+				ciudad, estado, telefonocasa, telefonotrabajo, conyugenombre,conyugenacionalidad, 
+				conyugelugardenacimiento, conyugefechadenacimiento, conyugerfc, conyugeocupacion,
+				curp, conyugecurp, email, imss, tipo_tramite, titular_ife, titular_ife_copias, 
+				titular_afore_copias, titular_carta_empresa, titular_acta_nacimiento,
+				titular_acta_nacimiento_copias, conyuge_ife, conyuge_ife_copias, conyuge_afore_copias, 
+				conyuge_carta_empresa, conyuge_acta_nacimiento, conyuge_acta_nacimiento_copias,
+				acta_matrimonio, acta_matrimonio_copias) values ({}, '{}', '{}',
+				'{}','{}',{},
+				'{}','{}','{}',
+				'{}','{}','{}',
+				'{}','{}','{}',
+				'{}','{}','{}',
+				'{}','{}',{},
+				'{}','{}','{}',
+				'{}','{}','{}',
+				'{}',{},{},
+				{},{},{},
+				{},{},{},
+				{},{},{},
+				{},{},{})""".format(cliente, self.upper("nombre"), self.upper("rfc"), \
+				self.upper("nacionalidad"), self.upper("lugarnacimiento"), fechanacimiento,\
+				record["estadocivil"], record["situacion"], record["regimen"], \
+				record["ocupacion"], self.upper("domicilio"), self.upper("colonia"), \
+				record["codigopostal"], self.upper("ciudad"), self.upper("estado"),\
+				record["telefonocasa"], record["telefonotrabajo"], self.upper("conyugenombre"),\
+				self.upper("conyugenacionalidad"), self.upper("conyugelugarnacimiento"), conyugefechanacimiento, \
+				self.upper("conyugerfc"), record["conyugeocupacion"], self.upper("curp"), \
+				self.upper("conyugecurp"), record["email"], record["afiliacion"], \
+				record["tipoTramite"], self.boolSql(record["titularIfe"]), self.boolSql(record["titularCopiasIfe"]),\
+				self.boolSql(record["titularCopiaAfore"]), self.boolSql(record["titularCartaEmpresa"]), self.boolSql(record["titularActaNacimiento"]), \
+				self.boolSql(record["titularCopiasActaNacimiento"]), self.boolSql(record["conyugeIfe"]), self.boolSql(record["conyugeCopiasIfe"]), \
+				self.boolSql(record["conyugeCopiaAfore"]), self.boolSql(record["conyugeCartaEmpresa"]), self.boolSql(record["conyugeActaNacimiento"]), \
+				self.boolSql(record["conyugeCopiasActaNacimiento"]), self.boolSql(record["actaMatrimonio"]), self.boolSql(record["copiasActaMatrimonio"]))
+			
+			sqlx = self.cleanSql(sql)
+			#sqlx = sqlx.encode("iso-8859-1")
+			print(paint.blue(sqlx))
+			
+			cu.execute(sqlx)
+			c.commit()
+		except AssertionError as e:
+			print_exc()
+			error = e.args[0]
+			self.request.response.status = 400
+			return self.edata_error(error)
+		except:
+			print_exc()
+			error = l_traceback()
+			self.request.response.status = 400
+			return self.edata_error(error)
+		record["id"] = cliente
+		print("el cliente es ", cliente)
+		try:
+			poolconn.close()
+		except:
+			pass
+		return dict( clientesarcadias = record )
+
 
 @resource(collection_path='api/vendedoresarcadias', path='api/vendedoresarcadias/{id}')
 class VendedoresArcadiaRest(EAuth):
@@ -10679,6 +10866,37 @@ class VendedoresArcadiaRest(EAuth):
 		
 		self.request = request
 	
+	def cleanSql( self, sql ):
+		sql = sql.replace("\n"," ")
+		sql = sql.replace("\t", " ")
+		return sql
+	
+	def put(self):
+		que, record, token = self.auth(content = "vendedoresarcadia", get_token = True)
+		if not que:
+			return dict(lotesdisponiblesarcadias = [])
+		id = self.request.matchdict['id']
+		return self.store(record, id)
+
+	
+	def get(self):
+		que, record = self.auth()
+		print("entrando en vendedor")
+		if not que:
+			return dict(comisioncompartida = [])
+		
+		cual = int(self.request.matchdict['id'])
+		print("vuendo el id ", cual)
+		sql = """select codigo as codigo , nombre as nombre , domicilio as domicilio, colonia as colonia, cp as cp , ciudad as ciudad, estado as estado , telefono as telefono, rfc as rfc, email as email from vendedor where codigo={}
+		""".format(cual)
+		record = None
+		for i,x in enumerate(DBSession2.execute(preparaQuery(sql)),1):
+			record = dict(id=x.codigo, codigo = x.codigo, nombre = x.nombre, domicilio= x.domicilio, colonia = x.colonia, cp = x.cp, ciudad = x.ciudad, estado= x.estado, telefono=x.telefono, rfc=x.rfc, email = x.email)
+		if record != None:
+			return dict(vendedoresarcadias = record)
+		else:
+			return dict(vendedoresarcadias = dict())
+
 
 	def collection_get(self):
 		que, record, token = self.auth(get_token = True)
@@ -10689,57 +10907,68 @@ class VendedoresArcadiaRest(EAuth):
 		"""
 		resultado = []
 		for i,x in enumerate(DBSession2.execute(preparaQuery(sql)),1):
-			resultado.append(dict(id=i, nombre=x.nombre, codigo=x.codigo))
+			resultado.append(dict(id=x.codigo, nombre=x.nombre, codigo=x.codigo, email=x.email, telefono=x.telefono))
 		print("cayo aqui")
 		return dict(vendedoresarcadias = resultado )
 
 	def collection_post(self):
-		que, record, token = self.auth(content = "tramite", get_token = True)
+		que, record, token = self.auth(content = "vendedoresarcadia", get_token = True)
 		if not que:
 			return record
+		return self.store(record)
+	
+
+	def store(self, record, codigo=None):
 		ses = DBSession2
-		engine = Base.metadata.bind
+		engine = Base2.metadata.bind
 		poolconn = engine.connect()
 		cn_sql = poolconn.connection
 		self.cn_sql = cn_sql
 		self.poolconn = poolconn
-		d = dict()
-		user = cached_results.dicTokenUser.get( token, d )
-		usuario = user.get("usuario", "")
-		
 		try:
-			tramite = record.get("tramite")
-			inmueble = record.get("inmueble")
-			
-			assert user.get("perfil", "") in ("admin","comercial","subdireccioncomercial", "subdireccion", "auxiliarsubdireccion", "especialcomercial", "finanzas", "cobranza", "gestionurbana"), "perfil inadecuado"
-			assert usuario, "no hay usuario"
-			assert tramite, "no hay tramite"
-			assert inmueble, "no hay inmueble"
-			
-		
-			sql = u"""
-			insert integracion_fechas(integracion,requisito, fecha_inicio, fecha_entrega, solicitud)
-			values({},{},convert(varchar(10),getdate(),111),convert(varchar(10),getdate(),111),1)
-			
-			""".format(integracion,tramite)
-			sql = self.cleanSql(sql)
-			sql = sql.encode("iso-8859-1")
-			cu = cn_sql.cursor()
-			cu.execute(sql)
-			cn_sql.commit()
-			print("inserting integracion_fechas")
-			try:
-				poolconn.close()
-			except:
-				pass
-			return dict(tramite = dict(id=tramite, tramite=tramite, inmueble= inmueble,
-					 montoCredito=0, montoSubsidio=0, 
-					numeroCredito=0, fechaInicial='',
-					fechaInicio='',
-					 fechaRealEntrega='',
-					 fechaEstEntrega='',
-					fechaVencimiento='',
-					 comentario='', descripcion='', origen = 'g'))
+			nombre = record.get("nombre", "")
+			domicilio = record.get("domicilio", "")
+			colonia = record.get("colonia", "")
+			cp = record.get("cp", "")
+			ciudad = record.get("ciudad", "")
+			estado = record.get("estado", "")
+			telefono = record.get("telefono", "")
+			rfc = record.get("rfc", "")
+			email = record.get("email", "")
+			#assert user.get("perfil", "") in ("admin","comercial","subdireccioncomercial", "subdireccion", "auxiliarsubdireccion", "especialcomercial", "finanzas", "cobranza", "gestionurbana"), "perfil inadecuado"
+			assert nombre, "no hay nombre"
+			if codigo:
+				print("si entro acaaaaa")
+				sql = u"""update vendedor set nombre='{}', domicilio='{}', 
+				colonia='{}', cp='{}', ciudad='{}', estado='{}', telefono='{}', rfc='{}',
+				email='{}' where codigo={}""".format(nombre, domicilio, colonia, cp, ciudad, estado, telefono, rfc, email, codigo)
+				sql = self.cleanSql(sql)
+				cu = cn_sql.cursor()
+				cu.execute(sql)
+				cn_sql.commit()
+				try:
+					poolconn.close()
+				except:
+					pass
+				print("si termino")
+				return dict(vendedoresarcadia = dict(nombre=nombre, codigo=codigo, id=codigo))
+			else:
+				codigo = None
+				for x in DBSession2.execute("select max(codigo) as codigo from vendedor"):
+					codigo =  x.codigo+1
+				if codigo is not None:
+					pass
+				sql = u"""insert vendedor(codigo, nombre, activo) values ({},'{}',1)""".format(codigo, nombre)
+				sql = self.cleanSql(sql)
+				cu = cn_sql.cursor()
+				cu.execute(sql)
+				cn_sql.commit()
+				print("inserting vendedor")
+				try:
+					poolconn.close()
+				except:
+					pass
+				return dict(vendedoresarcadia = dict(nombre=nombre, codigo=codigo, id=codigo))
 
 		except AssertionError as e:
 			print_exc()
