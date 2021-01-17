@@ -1,5 +1,3 @@
-#!/bin/env python
-# -*- coding: iso-8859-15 -*-
 from cornice.resource import resource, view
 import os
 from tempfile import NamedTemporaryFile
@@ -18,7 +16,7 @@ import calendar
 import transaction
 from . import nbb
 from . import enbb
-from .utils import aletras, upper2
+from .utils import aletras, upper2 #CantidadAPalabras, thousands_commas
 from datetime import datetime
 import json
 import xlwt
@@ -46,6 +44,11 @@ from painter import paint
 import uuid
 from .graficos import *
 import datetime as tiempo
+from PyPDF2 import PdfFileReader
+import pdfkit
+import os
+
+#c2p=CantidadAPalabras
 
 redis_host, redis_port, redis_db  = "127.0.0.1", 6379, 5
 redis_conn = None
@@ -10703,25 +10706,18 @@ class ClientesArcadiaRest(EAuth):
 		return fecha
 		
 	def upper( self, key ):
-		#print( paint.yellow("la llave es {}".format(key)))
 		try:
 			val = self.record[key]
 		except:
 			traceback.print_exc()
 			val = ""
-
 		if not val:
 			return val
 		try:
-			
-			#print ( paint.yellow("a convertir {}".format(key)))
 			decoded = val
 			good = decoded.upper()
-			#print good
-			
 			return good
 		except:
-			print(paint.red("saliendo por error en upper()"))
 			traceback.print_exc()
 			raise ZenError(1)
 	
@@ -10730,6 +10726,16 @@ class ClientesArcadiaRest(EAuth):
 		sql = sql.replace("\t", " ")
 		return sql
 	
+	def put(self):
+		que, record, token = self.auth(content = "clientesarcadia", get_token = True)
+		if not que:
+			return dict(lotesdisponiblesarcadias = [])
+		
+		id = self.request.matchdict['id']
+		return self.store(record, id)
+
+
+
 	def get(self):
 		que, record = self.auth()
 		print("entrando en vendedor")
@@ -10742,13 +10748,13 @@ class ClientesArcadiaRest(EAuth):
 			print("viendo record----")
 			print(x)
 			#"codigo, nombre , rfc, nacionalidad , lugardenacimiento,fechadenacimiento       estadocivil     situacion     regimen  ocupacion       domicilio       colonia cp      ciudad  estado  telefonocasa    telefonotrabajo conyugenombre conyugenacionalidad      conyugelugardenacimiento        conyugefechadenacimiento        conyugerfc      conyugeocupacion       contpaq curp    conyugecurp     email"
-			record = dict(id=x.codigo, nombre=x.nombre, rfc=x.rfc, nacionalidad=x.nacionalidad, 
+			record = dict(id=x.codigo, nombre=x.nombre, rfc=x.rfc, curp=x.curp, nacionalidad=x.nacionalidad, 
 			lugarnacimiento=x.lugardenacimiento, fechanacimiento=self.conv_fecha(x.fechadenacimiento), estadocivil=x.estadocivil,
 			situacion=x.situacion, regimen=x.regimen, ocupacion=x.ocupacion, domicilio=x.domicilio, colonia=x.colonia,
-			cp=x.cp, ciudad=x.ciudad, estado=x.estado, telefonocasa=x.telefonocasa, telefonotrabajo=x.telefonotrabajo,
+			codigopostal=x.cp, ciudad=x.ciudad, estado=x.estado, telefonocasa=x.telefonocasa, telefonotrabajo=x.telefonotrabajo,
 			conyugenombre=x.conyugenombre, conyugecurp=x.conyugecurp, conyugerfc=x.conyugerfc,
 			conyugefechanacimiento=self.conv_fecha(x.conyugefechadenacimiento), conyugelugarnacimiento=x.conyugelugardenacimiento,
-			conyugenacionalidad= x.conyugenacionalidad, conyugeocupacion=x.conyugeocupacion)
+			conyugenacionalidad= x.conyugenacionalidad, conyugeocupacion=x.conyugeocupacion, email=x.email)
 		return dict(clientesarcadia = record)
 	
 
@@ -10769,22 +10775,23 @@ class ClientesArcadiaRest(EAuth):
 		
 		return self.store( record )
 
-	def store( self, record , id = None):
+	def store( self, record , codigo = None):
 		print("Voy a generar el cliente")
 		queries = []
 		error = "Pendiente de implementar"
 		ses = DBSession2
 		
 		cliente = 0
-		for x in ses.execute("select max(codigo) + 1 as cliente from cliente"):
-			cliente = x.cliente
+		if not codigo:
+			for x in ses.execute("select max(codigo) + 1 as cliente from cliente"):
+				cliente = x.cliente
 		
 		try:
 			self.record = record
 			for row in sorted(record.keys()):
 				pass
-
-			assert cliente, "no se obtuvo el codigo de cliente correcto"
+			if not codigo:
+				assert cliente, "no se obtuvo el codigo de cliente correcto"
 			engine = Base2.metadata.bind
 			poolconn = engine.connect()
 			c = poolconn.connection
@@ -10798,49 +10805,51 @@ class ClientesArcadiaRest(EAuth):
 			if record["fechanacimiento"]:
 				fechanacimiento = "'{}'".format(record["fechanacimiento"])
 			cu = c.cursor()
-			sql = u"""
-			insert into cliente(codigo, nombre, rfc, nacionalidad, lugardenacimiento, 
-				fechadenacimiento, estadocivil, situacion, regimen, ocupacion, domicilio, colonia, cp, 
-				ciudad, estado, telefonocasa, telefonotrabajo, conyugenombre,conyugenacionalidad, 
-				conyugelugardenacimiento, conyugefechadenacimiento, conyugerfc, conyugeocupacion,
-				curp, conyugecurp, email, imss, tipo_tramite, titular_ife, titular_ife_copias, 
-				titular_afore_copias, titular_carta_empresa, titular_acta_nacimiento,
-				titular_acta_nacimiento_copias, conyuge_ife, conyuge_ife_copias, conyuge_afore_copias, 
-				conyuge_carta_empresa, conyuge_acta_nacimiento, conyuge_acta_nacimiento_copias,
-				acta_matrimonio, acta_matrimonio_copias) values ({}, '{}', '{}',
-				'{}','{}',{},
-				'{}','{}','{}',
-				'{}','{}','{}',
-				'{}','{}','{}',
-				'{}','{}','{}',
-				'{}','{}',{},
-				'{}','{}','{}',
-				'{}','{}','{}',
-				'{}',{},{},
-				{},{},{},
-				{},{},{},
-				{},{},{},
-				{},{},{})""".format(cliente, self.upper("nombre"), self.upper("rfc"), \
-				self.upper("nacionalidad"), self.upper("lugarnacimiento"), fechanacimiento,\
-				record["estadocivil"], record["situacion"], record["regimen"], \
-				record["ocupacion"], self.upper("domicilio"), self.upper("colonia"), \
-				record["codigopostal"], self.upper("ciudad"), self.upper("estado"),\
-				record["telefonocasa"], record["telefonotrabajo"], self.upper("conyugenombre"),\
-				self.upper("conyugenacionalidad"), self.upper("conyugelugarnacimiento"), conyugefechanacimiento, \
-				self.upper("conyugerfc"), record["conyugeocupacion"], self.upper("curp"), \
-				self.upper("conyugecurp"), record["email"], record["afiliacion"], \
-				record["tipoTramite"], self.boolSql(record["titularIfe"]), self.boolSql(record["titularCopiasIfe"]),\
-				self.boolSql(record["titularCopiaAfore"]), self.boolSql(record["titularCartaEmpresa"]), self.boolSql(record["titularActaNacimiento"]), \
-				self.boolSql(record["titularCopiasActaNacimiento"]), self.boolSql(record["conyugeIfe"]), self.boolSql(record["conyugeCopiasIfe"]), \
-				self.boolSql(record["conyugeCopiaAfore"]), self.boolSql(record["conyugeCartaEmpresa"]), self.boolSql(record["conyugeActaNacimiento"]), \
-				self.boolSql(record["conyugeCopiasActaNacimiento"]), self.boolSql(record["actaMatrimonio"]), self.boolSql(record["copiasActaMatrimonio"]))
-			
-			sqlx = self.cleanSql(sql)
-			#sqlx = sqlx.encode("iso-8859-1")
-			print(paint.blue(sqlx))
-			
-			cu.execute(sqlx)
-			c.commit()
+
+			if codigo:
+				sql = u"""update cliente set nombre='{}', rfc='{}', nacionalidad='{}', lugardenacimiento='{}', 
+					fechadenacimiento={}, estadocivil={}, situacion={}, regimen={}, ocupacion={},
+					domicilio='{}', colonia='{}', cp='{}', ciudad='{}', estado='{}', telefonocasa='{}',
+					telefonotrabajo='{}', conyugenombre='{}',conyugenacionalidad='{}',
+					conyugelugardenacimiento='{}', conyugefechadenacimiento={}, conyugerfc='{}',
+					conyugeocupacion='{}',curp='{}', conyugecurp='{}', email='{}'
+					where codigo={}
+					""".format(self.upper("nombre"), self.upper("rfc"), self.upper("nacionalidad"), self.upper("lugarnacimiento"), 
+					fechanacimiento, record["estadocivil"], record["situacion"], record["regimen"], record["ocupacion"],
+					self.upper("domicilio"), self.upper("colonia"), record["codigopostal"], self.upper("ciudad"), self.upper("estado"), record["telefonocasa"],
+					record["telefonotrabajo"], self.upper("conyugenombre"), self.upper("conyugenacionalidad"),
+					self.upper("conyugelugarnacimiento"), conyugefechanacimiento, self.upper("conyugerfc"),
+					record["conyugeocupacion"], self.upper("curp"), self.upper("conyugecurp"), record["email"], codigo)
+				sqlx = self.cleanSql(sql)
+				#sqlx = sqlx.encode("iso-8859-1")
+				print(paint.blue(sqlx))
+				cu.execute(sqlx)
+				c.commit()
+			else:
+				sql = u"""
+				insert into cliente(codigo, nombre, rfc, nacionalidad, lugardenacimiento, 
+					fechadenacimiento, estadocivil, situacion, regimen, ocupacion, domicilio, colonia, cp, 
+					ciudad, estado, telefonocasa, telefonotrabajo, conyugenombre,conyugenacionalidad, 
+					conyugelugardenacimiento, conyugefechadenacimiento, conyugerfc, conyugeocupacion,
+					curp, conyugecurp, email) values ({}, '{}', '{}','{}','{}',
+					{},'{}','{}','{}','{}','{}','{}','{}',
+					'{}','{}','{}','{}','{}','{}',
+					'{}',{},'{}','{}',
+					'{}','{}','{}')""".format(cliente, self.upper("nombre"), self.upper("rfc"), \
+					self.upper("nacionalidad"), self.upper("lugarnacimiento"), fechanacimiento,\
+					record["estadocivil"], record["situacion"], record["regimen"], \
+					record["ocupacion"], self.upper("domicilio"), self.upper("colonia"), \
+					record["codigopostal"], self.upper("ciudad"), self.upper("estado"),\
+					record["telefonocasa"], record["telefonotrabajo"], self.upper("conyugenombre"),\
+					self.upper("conyugenacionalidad"), self.upper("conyugelugarnacimiento"), conyugefechanacimiento, \
+					self.upper("conyugerfc"), record["conyugeocupacion"], self.upper("curp"), \
+					self.upper("conyugecurp"), record["email"])
+				
+				sqlx = self.cleanSql(sql)
+				#sqlx = sqlx.encode("iso-8859-1")
+				print(paint.blue(sqlx))
+				cu.execute(sqlx)
+				c.commit()
 		except AssertionError as e:
 			print_exc()
 			error = e.args[0]
@@ -10851,8 +10860,9 @@ class ClientesArcadiaRest(EAuth):
 			error = l_traceback()
 			self.request.response.status = 400
 			return self.edata_error(error)
-		record["id"] = cliente
-		print("el cliente es ", cliente)
+		if not codigo:
+			record["id"] = cliente
+			print("el cliente es ", cliente)
 		try:
 			poolconn.close()
 		except:
@@ -12156,6 +12166,617 @@ def log_error_to_rdb( funcion = "", topico = "" ):
 	rdb.connect(cached_results.settings.get("rethinkdb.host"), cached_results.settings.get("rethinkdb.port")).repl()
 	ptable = rdb.db("printing").table("errors")
 	ptable.insert(dict( error = t_error, date = datetime.now().isoformat(), topico = topico , funcion = funcion )).run()
+
+def amount_and_cents_with_commas(v, name='(Unknown name)', md={}):
+	try: v= "%.2f" % v
+	except: v= ''
+	return thousands_commas(v)
+
+@view_config( route_name = "otroprint", renderer= "json", request_method = "GET")
+def otroprint(request):
+	contrato="contrato"
+	razonsocial="razon soc"
+	representantelegal ="replec" 
+	nombrecliente="nombre cliente"
+	letra="letra"
+	modulo="modulo"
+	desarrollo="desarrollo"
+	dciudad="ciudad"
+	destado="estado"
+	superficie="superfiecie"
+	titulo1="titulo1"
+	lindero1="lindero1"
+	titulo2="titulo2"
+	lindero2="lindero2"
+	titulo3="titulo3"
+	lindero3="lindero3"
+	titulo4="titulo4"
+	lindero4="lindero4"
+	rfccliente="rfccliente"
+	totalapagarq="totalapagarq"
+	totalapagarl="totalapagarl"
+	c2p1="c2p1"
+	sabe = "%"
+	sabe2="%"
+	eciudad="eciudad"
+	eestado="eestado"
+	edomicilio="edomicilio"
+	domiciliocliente="domiciliocliente"
+	ciudadcliente="ciudadcliente"
+	estadocliente="estadocliente"
+	fechadia="fechadia"
+	fechames="fechames"
+	fechaano="fechano"
+	razonsocial="razonsocial"
+	representantelegal="representantelegal"
+	nombrecliente="nombrecliente"
+	nombrevendedor="nombrevendedor"
+	engancheq = "engancheq"
+	enganchel = "enganchel"
+	restoq = "restoq"
+	restol = "restol"
+	plazomeses = ""
+
+	#cu.execute("select razonsocial, representantelegal, ciudad, estado, domicilio, colonia from empresa where codigo = 1")
+	#row = fetchone(cu)
+	ses = DBSession2
+	for x in ses.execute("select razonsocial, representantelegal, ciudad, estado, domicilio, colonia from empresa where codigo = 1"):
+		razonsocial = x.razonsocial
+		representantelegal = x.representantelegal
+		eciudad = x.ciudad 
+		eestado = x.estado
+		edomicilio = x.domicilio
+		if x.colonia:
+			edomicilio += " Col. " + x.colonia
+
+	#query = f"""
+	#	select count(*) as cuantos from gixamortizaciondetalle
+	#	where fkamortizacion = {258} and eliminado = 0
+	#
+	# 	"""
+	#este es el que estaba en gix
+	query = f"""
+		select convert(varchar(10), fechadepago, 103) from gixamortizaciondetalle
+		where fkamortizacion = {258} and eliminado = 0 order by fechadepago
+		"""
+
+	sql = (query.replace('\n',' ')).replace('\t',' ')
+	rows = []
+	for x in ses.execute(sql):
+		rows.append(x)
+	
+	if rows:
+		print("entro en rows")
+		#if True validacion 0 es igual a credito not self.GetControl(ID_CHOICEAMORFUNC1FORMADEPAGO).GetSelection() == 0:
+			#return "", 0
+		plazotabla = len(rows)
+		di, mi, ai = str(rows[0][0]).split("/")
+		df, mf, af = str(rows[len(rows) - 1][0]).split("/")
+		query = f"""
+		select sum(pagofijo) as suma from gixamortizaciondetalle where fkamortizacion = {258} and eliminado = 0
+		"""
+		sql = (query.replace('\n',' ')).replace('\t',' ')
+		for x in ses.execute(sql):
+			totaltabla = x.suma
+
+	else:
+		# validacion 1 es igual a contado if not self.GetControl(ID_CHOICEAMORFUNC1FORMADEPAGO).GetSelection() == 1:
+			#return "", 0
+		
+		plazotabla, totaltabla = 0, 0
+		di, mi, ai, df, mf, af = 0, 0, 0, 0, 0, 0
+	
+	query = f"""
+	select count(*) as cuantos from gixamortizaciondetalle
+	where fkamortizacion = {258} and eliminado = 0 and insertado <> 0
+	"""
+	sql = (query.replace('\n',' ')).replace('\t',' ')
+	cuantos = None
+	for x in ses.execute(sql):
+			cuantos = x.cuantos
+	pagoextra = False
+	if cuantos is not None:
+		if int(cuantos) > 0:
+			pagoextra = True
+		else:
+			plazotabla, totaltabla = 0, 0
+	#cada linea los campos que hay del query de abajo
+	#0-3
+	#4-5
+	#6
+	#7-14
+	#15
+	#16-20
+	#21-24
+	query = f"""
+	select rtrim(ltrim(i.iden1)) as iden1, rtrim(ltrim(i.iden2)) as iden2, a.enganchec as enganchec, i.superficie as superficie,
+	a.saldoafinanciar as saldoafinanciar, i.preciopormetro as preciopormetro,
+	case a.plazomeses when 0 then (a.saldoafinanciar + a.enganchec) else ((a.pagomensualfijo * a.plazomeses) + a.enganchec) end as totalapagarq,
+	i.titulo1 as titulo1, i.lindero1 as lindero1, i.titulo2 as titulo2, i.lindero2 as lindero2, i.titulo3 as titulo3, i.lindero3 as lindero3, i.titulo4 as titulo4, i.lindero4 as lindero4,
+	case a.plazomeses when 0 then a.saldoafinanciar else (a.pagomensualfijo * a.plazomeses) end as restoq,
+	a.plazomeses as plazomeses, a.pagomensualfijo as pagomensualfijo, convert(varchar(10), a.fechaelaboracion, 103) as fechaelaboracion, a.fkcliente as cliente, a.fkvendedor as vendedor,
+	a.contrato as contrato, a.cuenta, convert(varchar(10), a.fechaprimerpago, 103), convert(varchar(10), a.fechaenganche, 103)
+	from gixamortizacion a
+	join INMUEBLE i on a.fkinmueble = i.codigo
+	where a.pkamortizacion = {258}
+	"""
+	sql = (query.replace('\n',' ')).replace('\t',' ')
+	general = None
+	for x in ses.execute(sql):
+		general = dict(iden1 = x.iden1, iden2=x.iden2, enganchec=x.enganchec, superficie=x.superficie,
+		saldoafinanciar=x.saldoafinanciar, preciopormetro=x.preciopormetro, vendedor=x.vendedor,
+		cliente=x.cliente, contrato=x.contrato, totalapagarq=x.totalapagarq, restoq=x.restoq,
+		plazomeses=x.plazomeses, pagomensualfijo=x.pagomensualfijo, fechaelaboracion=x.fechaelaboracion,
+		titulo1=x.titulo1, lindero1=x.lindero1, titulo2=x.titulo2, lindero2=x.lindero2, titulo3=x.titulo3, lindero3=x.lindero3, titulo4=x.titulo4, lindero4=x.lindero4)
+		print("viendo general")
+		print(general)
+	if general["cliente"]:
+		sql = "select nombre, domicilio, colonia, ciudad, estado, rfc from cliente where codigo = {}".format(general["cliente"])
+		for x in ses.execute(sql):
+			nombrecliente = x.nombre
+			domiciliocliente = x.domicilio
+			if x.colonia:
+				domiciliocliente += " Col. " + x.colonia
+			ciudadcliente = x.ciudad
+			estadocliente = x.estado
+			rfccliente = x.rfc
+			
+		sql = f"select nombre as nombre from vendedor where codigo = {general['vendedor']}"
+		for x in ses.execute(sql):
+			nombrevendedor = x.nombre
+		
+		for x in ses.execute("select contrato, descripcion, ciudad, estado from desarrollo where codigo = 5"):
+			contrato = x.contrato
+			desarrollo = x.descripcion
+			dciudad = x.ciudad
+			destado = x.estado
+		
+		#esto no lo vamos a cenesitar, si existia el contrato lo regresa leyendolo de disco duro para no segur con la operacion
+		#if int(row[21]) > 0:
+		#	contrato = int(row[21])
+		#	if int(row[22]) > 0:
+		#		archivo = "Contrato%s_%s.pdf" % (contrato, self.pkamortizacion)
+		#		try:
+		#			f = open(archivo, 'r')
+		#			f.close()
+		#			return "", contrato
+		#		except:
+		#			pass
+		
+		#esto tamien lo vamos a quitar ya que aqui trata de generar un contrato nuevo aqui solo vamos a leer contratos
+		#else:
+		#	sql = "update desarrollo set contrato = %s where codigo = 5" % (contrato + 1)
+		#	todook, trash = self.QueryUpdateRecord(sql, conexion = r_cngcmex)
+		#	if not todook:
+		#		Mensajes().Info(self, u"� Problemas al actualizar el contrato (1) !", u"Atenci�n")
+		#		return ""
+		
+		#	sql = "update gixamortizacion set contrato = %s where pkamortizacion = %s" % (contrato, self.pkamortizacion)
+		#	todook, trash = self.QueryUpdateRecord(sql, conexion = r_cngcmex)
+		#	if not todook:
+		#		Mensajes().Info(self, u"� Problemas al actualizar el contrato (2) !", u"Atenci�n")
+		#		return ""
+			
+		#	self.DisplayContrato(contrato)
+
+		mes = ("", "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic")
+		meses = ("", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto",
+					"Septiembre", "Octubre", "Noviembre", "Diciembre")
+		letra = general['iden1']
+		modulo = general['iden2']
+		engancheq = formato_comas.format(general['enganchec'])
+		enganchel = aletras(float(general['enganchec']), tipo="pesos")
+		superficie = formato_comas.format(float(general['superficie']))
+		saldoafinanciar = formato_comas.format(float(general['saldoafinanciar']))
+		preciom2 = formato_comas.format(float(general['preciopormetro']))
+		if totaltabla > 0:
+			totalapagarq = formato_comas.format((float(totaltabla) + float(general['enganchec'])))
+			totalapagarl = aletras((float(totaltabla) + float(general['enganchec'])), tipo="pesos")
+			restoq = formato_comas.format(float(totaltabla))
+			restol = aletras(float(totaltabla), tipo="pesos")
+		else:
+			totalapagarq = formato_comas.format((float(general['totalapagarq'])))
+			totalapagarl = aletras(float(general['totalapagarq']), tipo="pesos")
+			restoq = formato_comas.format(float(general['restoq']))
+			restol = aletras(float(general['restoq']), tipo="pesos")
+
+		titulo1 = general['titulo1']
+		lindero1 = general['lindero1']
+		titulo2 = general['titulo2']
+		lindero2 = general['lindero2']
+		titulo3 = general['titulo3']
+		lindero3 = general['lindero3']
+		titulo4 = general['titulo4']
+		lindero4 = general['lindero4']
+		profeco = "Número de Autorización de la Profeco: PFC.B.E.7/007544-2015"
+
+		if plazotabla > 0:
+			plazomeses = plazotabla
+		else:
+			plazomeses = int(general['plazomeses'])
+
+		pagomensualq = formato_comas.format(float(general['pagomensualfijo']))
+		pagomensuall = aletras(float(general['pagomensualfijo']), tipo="pesos")
+		fechadia, fechames, fechaano = str(general['fechaelaboracion']).split("/")
+
+
+	c2p1 = f"""
+					<div style="text-align: justify;"><br>1.- La cantidad de ${engancheq},
+					({enganchel}), que manifiesta "LA PROMITENTE VENDEDORA" recibir en
+					este acto a su entera satisfacción, sirviendo el presente contrato de
+					formal recibo por la entrega de dicha cantidad.<br>
+					</div>
+					<div style="text-align: justify;"><br>2.- El resto de la contraprestación o
+					sea la cantidad de ${restoq}, ({restol}) la deberá pagar
+					"EL(LOS) PROMITENTE(S) COMPRADOR(ES)" mediante {plazomeses} amortizaciones
+					de la siguiente forma:<br><br>
+					</div>
+					"""
+	tableheader = u"""
+				        <div style="text-align: right;">
+					<span style="font-weight: bold; font-style: italic;">
+					No. de Pago&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+					Fecha de Pago&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+					Saldo Inicial&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+					Pago&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+					Saldo Final&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+					</span></div>
+					"""
+	#c2p1 += tableheader
+
+	header =f"""<!DOCTYPE html>
+	<html>
+		<head>
+		<meta charset="UTF-8">
+		</head>
+		<body>
+			Code of your header goes here
+		</body>
+	</html>"""
+
+	template = f"""<html>
+		<head>
+			<meta name="pdfkit-page-size" content="Legal"/>
+			<meta name="pdfkit-orientation" content="Landscape"/>
+			<meta charset="utf-8">
+      	</head>
+		<body>
+		<div style="text-align: right;">
+			NUMERO&nbsp; {"numero"} A<br>
+			</div>
+			<div style="text-align: justify;">
+			CONTRATO DE PROMESA DE COMPRA VENTA
+			QUE CELEBRAN POR UNA PARTE {razonsocial} REPRESENTADA EN ESTE ACTO POR EL SEÑOR
+			{representantelegal}, A QUIEN EN LO SUCESIVO SE LE
+			DENOMINARÁ "LA PROMITENTE VENDEDORA", Y POR OTRA PARTE, EL(LOS) SEÑOR(ES)
+			{nombrecliente}, POR SU PROPIO DERECHO, A QUIEN(ES) EN LO SUCESIVO SE LE(S) DENOMINARÁ "EL(LOS) PROMITENTE(S)
+			COMPRADOR(ES)", A AMBOS EN SU CONJUNTO SE LES DENOMINARÁ "LAS PARTES",
+			EL CUAL SUJETAN AL CONTENIDO DE LAS SIGUIENTES DECLARACIONES Y CLÁUSULAS:
+			<br>
+
+			</div>
+			<div style="text-align: center;"><span style="font-weight: bold;"><br>DECLARACIONES:</span><br>
+			</div>
+			<br>
+
+			I.- Declara el representante de "LA PROMITENTE VENDEDORA", por conducto de su representante:<br>
+			<div style="text-align: justify;">a) Que su representada es una sociedad
+			mercantil legalmente constituida mediante escritura pública número
+			43,065, otorgada el día 16 de agosto de 1991, ante la fé del Licenciado
+			Felipe Ignacio Vázquez Aldana Sauza, Notario Público Suplente Adscrito
+			y Asociado número 2 de Tlaquepaque, Jalisco, la cual se registró bajo
+			inscripción 311-312 del tomo 410 del Libro Primero del Registro Público
+			de Comercio de Guadalajara, Jalisco.<br>
+			</div>
+
+			<div style="text-align: justify;"><br>b)Que su representante cuenta con las facultades
+			juridicas necesarias para contratar y obligarla en los terminos de este contrato,
+			manifestando bajo protesta de decir verdad, que dichas facultades no le han sido revocadas,
+			limitadas, o modificadas en forma alguna.<br>
+			</div>
+
+			<div style="text-align: justify;"><br>c) Que su representada se encuentra inscrita
+			en el Registro Federal de Contribuyentes bajo la Clave: APR910816FJ3.<br>
+			</div>
+
+			<div style="text-align: justify;"><br>d) Que tiene interés en vender a "EL(LOS) PROMITENTE(S) COMPRADOR(ES)", 
+			el inmueble que acontinuación se describe:<br>
+			</div>
+
+			<div style="text-align: justify;"><br>Lote marcado con la Letra {letra} del
+			Módulo {modulo}, perteneciente al Desarrollo Campestre Recreativo
+			conocido como "{desarrollo}", ubicado en el municipio de {dciudad},
+			{destado}, dicho inmueble tiene una Superficie de {superficie} m2.
+			y las siguientes medidas y linderos:<br>
+			</div>
+
+			<br>
+			{titulo1} :&nbsp;&nbsp;&nbsp; {lindero1}<br>
+			{titulo2} :&nbsp;&nbsp;&nbsp; {lindero2}<br>
+			{titulo3} :&nbsp;&nbsp;&nbsp; {lindero3}<br>
+			{titulo4} :&nbsp;&nbsp;&nbsp; {lindero4}<br>
+			(en lo sucesivo "EL INMUEBLE").<br>
+			<div style="text-align: justify;">
+			<br>
+			e) Que "EL INMUEBLE" se encuentra libre de todo gravamen, limitacion
+			de dominio y de cualquier responsabilidad, al corriente en el pago del impuesto predial y demas
+			contribuciones que le corresponden, así como de los servicios con que cuentan.<br>
+			</div>
+
+			<div style="text-align: justify;"><br>f) Que ha ofrecido en venta "EL INMUEBLE", y que "EL(LOS)
+			PROMITENTE(S) COMPRADOR(ES)" ha(n) tomado y aceptado en todos sus términos, la oferta realizada
+			de conformidad con los dispuesto en el presente Contrato.
+			<br></div>
+
+			
+			<div style="text-align: justify;"><br>II.- Declara "El(LOS) RPOMINENTE(S) COMPRADOR(ES)":
+			</div>
+			<div style="text-align:justify;">a) Ser persona(s), física(s), de nacionalidad mexicana, mayor(es) de edad,
+			y que cuenta(n) con la capacidad jurídica para contratarse en términos del presente instrumento.
+			<br></div>
+
+			<div style="text-align:justify;"><br>b) Que se encuentra(n) inscrito(s) en el Registro Federal de Contribuyentes
+			bajo Clave(s) {rfccliente}:
+			</div>
+
+			<div style="text-align:justify;"><br>c) Que en su deseo de adquirir de "LA PROMITENTE VENDEDORA" "EL INMUEBLE",
+			bajo los términos y condiciones que más adelante se establecen.
+			<br></div>
+
+			<div style="text-align:justify;"><br>III.- Declaran "LAS PARTES", la primera por conducto de su representante:
+			<br></div>
+
+			<div style="text-align: justify;">a) Que reconocen como ciertas las Declaraciones anteriores.
+			</div>
+
+			<div style="text-align: justify;"><br>b) Que se reconocen la personalidad con la que comparecen a la firma de este Contrato.
+			</div>
+
+			<div style="text-align: justify;"><br>c) Que comparecen en este acto al otorgar su consentimiento,
+			manifestando conocer plenamente el sentido del presente Contrato, no existiendo dolo, mala fe, enriquecimiento ilegitimo,
+			lesión o error que pudiera invalidarlo.
+			<br></div>
+
+			<div style="text-align: justify;"><br>En base a las Declaraciones que anteceden, "LAS PARTES" convienen en celebrar el presente
+			CONTRATO de Promesa de Compraventa, de conformidad con las siguientes,
+			<br></div>
+			<br>
+
+			<div style="text-align: center;"><span style="font-weight: bold;">CLÁUSULAS:<br></span>
+			</div>
+
+			<div style="text-align:justify;><span style="font-weight: bold;">PRIMERA.-OBJETO<br></div>
+
+			<div style="text-align:justify;">Por virtud del presente Instrumento "LA PROMITENTE VENDEDORA" promete vender "EL INMUEBLE" "ad corpus" a
+			"EL(LOS) PROMITENTE(S) COMPRADOR(ES)" quien(es) se obliga(n) a comprarlo, y pagar el precio acordado por "LAS PARTES", bajo los términos
+			y condiciones que más adelante se establecen. 
+			<br><br></div>
+
+			<div style="text-align:justify;><span style="font-weight: bold;">SEGUNDA.- PRECIO Y FORMA DE PAGO<br></div>
+			
+			<div style="text-align: justify;">El precio que "LAS PARTES"
+			han pactado por concepto de contraprestación asciende a la cantidad de
+			${totalapagarq}, ({totalapagarl}), el cual se establece por todo
+			el "INMUEBLE" materia de Contrato, ya que la presente operación se
+			realiza "ad corpus", por lo que en el supuesto de que al verificarse la
+			medición del mismo, éste resulte de mayor o menor superficie, el
+			precio no sufrirá alteración, tal como disponen los artículos 1858 y
+			1860 del Código Civil para el estado de Jalisco. "LAS PARTES" convienen en que el precio será pagado de la siguiente forma:<br>
+			</div>
+			
+			    {c2p1}
+			    
+			
+			<div><br><br></div>
+			<div style="text-align:justify;><span style="font-weight: bold;">QUINTA.- ESCRITURACIÓN<br></div>
+
+			<div style="text-align: justify;">"LA PROMITENTE VENDEDORA" se obliga a escriturar a "EL(LOS) PROMITENTE(S) COMPRADOR(ES)"
+			"EL INMUEBLE", una vez que este(os) haya(n) liquidado
+			la totalidad del precio de venta, y serán a cargo de "EL(LOS) PROMITENTE(S) COMPRADOR(ES)" 
+			todos los gastos que genera dicha transmisión de propiedad,
+			tanto en el otorgamiento del presente Contrato como en la escritura
+			pública correspondiente, como son Impuesto Sobre Transmisión
+			Patrimonial, derechos del Registro Público de la Propiedad, Avalúo y
+			honorarios notariales o cualquier otro gasto, impuesto o derecho que se
+			cause con la propia escritura, siendo únicamente a cargo de "LA PROMITENTE
+			VENDEDORA" &nbsp;el impuesto &nbsp;sobre la &nbsp;Renta &nbsp;que &nbsp;
+			se &nbsp;llegase &nbsp;a causar por la
+			venta &nbsp;de &nbsp;"EL INMUEBLE"; &nbsp;asimismo "EL(LOS) PROMITENTE(S) COMPRADOR((ES)",
+			en su caso,deberá(n) estar al
+			corriente en las cuotas condominales y se obliga(n) a entregar toda la
+			documentación que sea necesaria al Fedatario Público correspondiente
+			para el otorgamiento de la referida escritura.<br>
+			
+			</div>
+			<div style="text-align: justify;"><br>"LA PROMITENTE VENDEDORA"
+			girará instrucción al Notario Público de su elección 30 (treinta) días
+			naturales después de liquidado el precio de operación, misma que tendrá
+			una vigencia de 45 (cuarenta y cinco) días naturales para que "EL(LOS) PROMITENTE(S)
+			COMPRADOR(ES) acuda(n) ante Dicho Notario, presente(n) su documentación y firme(n)
+			la escritura correspondiente.&nbsp; En caso de no formalizar la
+			escritura pública de que se trata en el plazo de la vigencia de la
+			instrucción, "LA PROMITENTE VENDEDORA" podrá girar nueva instrucción con un
+			costo administrativo a cargo de "EL(LOS) PROMITENTE(S) COMPRADOR(ES)" de $ 100.00 ( CIEN
+			PESOS 00/100 M.N.) por cada día transcurrido desde la fecha de
+			caducidad de la primera instrucción y hasta la fecha de la nueva
+			instrucción.<br><br>
+			</div>			
+			
+
+			<div style="text-align:justify;><span style="font-weight: bold;">SEXTA.- ENTREGA DE LA POSESIÓN DE "EL INMUEBLE".<br></div>
+
+			<div style="text-align: justify;">La posesión material de "EL
+			INMUEBLE", la entrega en este acto "LA PROMITENTE VENDEDORA" a "EL(LOS) PROMITENTE(S)
+			COMPRADOR(ES)", a su entera satisfacción. En caso de rescisión del
+			presente contrato "EL(LOS) PROMITENTE(S) COMPRADOR(ES)", deberá(n)
+			restituir la posesión de dicho inmueble a "LA PROMITENTE VENDEDORA",
+			dentro de un plazo no mayor a 5 días contados a partir de la fecha en
+			que ocurra la rescisión. "LAS PARTES" convienen expresamente que en caso
+			de incumplimiento de "EL(LOS) PROMITENTE(S) COMPRADOR(ES)" en cuanto a
+			la restitución de la posesión dentro del plazo convenido, pagará(n) a
+			"LA PROMITENTE VENDEDORA" por concepto de pena convencional una
+			cantidad equivalente a 9 veces el salario mínimo vigente en esta
+			ciudad de Guadalajara, Jalisco, por cada día de retraso en la entrega de dicha posesión.<br><br><br><br>
+			</div>
+			
+
+			<div style="text-align:justify;><span style="font-weight: bold;">SEPTIMA.- PENA CONVENCIONAL.<br></div>
+
+			<div style="textrm-align: justify;">En caso de incumplimiento
+			de alguna de las obligaciones que asumen "LAS PARTES" en el presente
+			Contrato, la parte que incumpla pagará a la otra por concepto de pena
+			convencional una cantidad equivalente al 25 {sabe} calculado sobre el monto
+			total del precio pactado. En caso de que el incumplimiento fuere por
+			parte de "EL(LOS) PROMITENTE(S) COMPRADOR(ES)", "LA PROMITENTE
+			VENDEDORA" podrá optar por rescindir el presente contrato sin necesidad
+			de declaración judicial previa, mediante simple notificación hecha por
+			escrito.<br><br><br><br>
+			</div>
+			
+
+			<div style="text-align:justify;><span style="font-weight: bold;">OCTAVA.- CESIÓN.<br></div>
+
+			<div style="text-align: justify;">En caso de que "EL(LOS)
+			PROMITENTE(S) COMPRADOR(ES)", quisiere(n) ceder los derechos del
+			presente contrato, deberá de notificarlo por escrito a "LA PROMITENTE
+			VENDEDORA" y además se obliga(n) a pagarle a esta, una cantidad
+			equivalente al 5{sabe2} sobre el valor total de la correspondiente cesión de
+			derechos. Sin el consentimiento expreso por escrito de "LA PROMITENTE
+			VENDEDORA", la cesión de derechos no surtirá efecto legal alguno.<br><br><br><br>
+			</div>
+
+			<div style="text-align:justify;><span style="font-weight: bold;">NOVENA.- IMPUESTOS PREDIAL DE "EL INMUEBLE".<br></div>
+
+			<div style="text-align: justify;">"EL(LOS) PROMITENTE(S)
+			COMPRADOR(ES)" se obliga(n) a pagar a partir de esta fecha el impuesto
+			predial correspondiente a "EL INMUEBLE" y "LA PROMITENTE VENDEDORA" se obliga a entregar al
+			corriente el saldo del impuesto.<br><br><br><br>
+			</div>
+			
+			<div style="text-align:justify;><span style="font-weight: bold;">DECIMA.- CONSTRUCCION DE "EL INMUEBLE".<br></div>
+
+			<div style="text-align: justify;">"EL(LOS) PROMITENTE(S)
+			COMPRADOR(ES)", se obliga(n) a acatar las características de obra que
+			señale la Dirección de Obras Públicas del
+			H. Ayuntamiento respectivo,
+			así como las limitaciones que señala el
+			reglamento del Desarrollo,
+			respecto a la construcción que edifiquen sobre "EL INMUEBLE" misma que
+			deberá ser recreativa campestres.<br><br><br><br><br><br>
+			</div>
+
+			<div style="text-align:justify;><span style="font-weight: bold;">DECIMO PRIMERA.- REGIMEN DE PROPIEDAD EN CONDOMINIO.<br></div>
+
+			<div style="text-align: justify;">"LAS PARTES" convienen
+			en que "LA PROMITENTE VENDEDORA" podrá, sin requerir el consentimiento
+			de "EL(LOS) PROMITENTE(S) COMPRADOR(ES)", sujetar "EL INMUEBLE" al Regimen de Propiedad y Condominio.
+			En caso de que "EL INMUEBLE" se afecte al Régimen de Propiedad y Condominio "LA
+			PROMITENTE VENDEDORA", se obliga a transmitir a "EL(LOS) PROMITENTE(S)
+			COMPRADOR(ES)", el mismo conjuntamente con la acción de dominio
+			indivisa sobre las áreas comunes que corresponda al lote condominal.
+			&nbsp; por su cuenta "EL(LOS) PROMITENTE(S) COMPRADOR(ES)" se obliga(n) a cumplir y acatar
+			en todos sus términos el
+			reglamento de administración del condominio.
+			"El inmueble" deberá estar libre de gravamen, al corriente de sus
+			obligaciones fiscales y "LA PROMITENTE VENDEDORA" se obligará al
+			saneamiento para el caso de evicción en los términos de Ley.<br><br><br>
+			</div>
+
+			<div style="text-align:justify;><span style="font-weight: bold;">DECIMA SEGUNDA.- GASTOS.<br></div>
+
+			<div style="text-align: justify;">Los gastos
+			ocasionados por el presente contrato, así como los gastos, impuestos,
+			derechos y honorarios ocasionados por la escritura de compra venta
+			definitiva serán a cargo de "EL(LOS) PROMITENTE(S) COMPRADOR(ES)". El
+			impuesto sobre la renta será pagado por "LA PROMITENTE VENDEDORA".<br><br><br>
+			</div>
+
+			<div style="text-align:justify;><span style="font-weight: bold;">DECIMA TERCERA.- TRIBUNALES COMPETENTES<br></div>
+
+			<div style="text-align: justify;">Para la
+			interpretación y cumplimiento del presente contrato "LAS PARTES" se
+			someten expresamente a los Tribunales de esta ciudad de Guadalajara,
+			Jalisco, renunciando al fuero presente o futuro que por cualquier causa
+			pudiere corresponderles.<br><br><br><br><br>
+			</div>
+
+			<div style="text-align:justify;><span style="font-weight: bold;">DECIMA CUARTA.- DEPOSITARIO DE "EL INMUEBLE".<br></div>
+
+			<div style="text-align: justify;">En el caso de que "LA
+			PROMITENTE VENDEDORA" exigiere judicialmente, el cumplimiento de las
+			obligaciones a cargo de "EL(LOS) PROMITENTE(S) COMPRADOR(ES)", éste(os)
+			conviene(n) en que no será(n) depositario(s) de "EL INMUEBLE" objeto de este
+			contrato, y por lo tanto se obliga a entregar a "LA PROMITENTE
+			VENDEDORA" al depositario que ésta nombre dicho inmueble; siendo
+			responsable(s) de cualquier daño o perjuicio que el inmueble sufra
+			mientras el depositario no tome posesión de su cargo.<br>
+			</div>
+			
+			<div style="text-align: justify;"><br>Todas las prestaciones derivadas de
+			este contrato, deberá pagarlas y cumplirlas "EL(LOS) PROMITENTE(S)
+			COMPRADOR(ES)" en la Ciudad de {eciudad}, {eestado}, en las oficinas de
+			la empresa ubicadas en {edomicilio}, o en las que designe con
+			posterioridad, mediante aviso dado por escrito a "EL(LOS) PROMITENTE(S)
+			COMPRADOR(ES)". El cambio de domicilio, los emplazamientos y demás diligencias judiciales o extrajudiciales
+			, se practicarán en el domicilio señalado en la presente cláusula<br><br><br><br><br>
+			</div>
+			<br>
+			
+
+			<div style="text-align:justify;><span style="font-weight: bold;">DECIMA QUINTA.- <br></div>
+
+			<div style="text-align: justify;">Para todos los efectos judiciales relativos al presente contrato, el acreditado
+			señala como su domicilio {domiciliocliente} en la Ciudad de {ciudadcliente}, {estadocliente}.  Mientras 
+			"EL(LOS) PROMINENTES COMPRADOR(ES)" no notifiquen por escrito a la "PROMINENTE VENDEDORA" el cambio de domicilio, 
+			los emplazamientos y demas diligencias judiciales o extrajudiciales, se practicarán en el domicilio señalado en la presente cláusula.
+			<br><br>
+			</div>
+			
+			<div style="text-align: justify;"><br>
+			Enteradas "LAS PARTES" del valor,
+			alcances y consecuencias legales del presente contrato, lo ratifican y
+			firman por duplicado en la Ciudad de Guadalajara, Jalisco, a los
+			{fechadia} días del mes de {fechames} de {fechaano}.<br><br><br>
+			</div>
+			<div style="text-align: center;"><br>"LA PROMITENTE VENDEDORA"<br>
+			<br><br>
+			_______________________________________________<br>
+			<br>
+			REPRESENTADA POR EL {representantelegal}<br>
+			<br><br><br>
+			"EL(LOS) PROMITENTE(S) COMPRADOR(ES)"<br>
+			<br><br>
+			_______________________________________________<br>
+			{nombrecliente}<br>
+			<br><br><br>
+			</div>
+			<table
+			style="text-align: left; width: 100px; margin-left: auto; margin-right: auto;"
+			border="0" cellpadding="2" cellspacing="2">
+			<tbody>
+			<tr>
+			<td style="vertical-align: top; text-align: center;">TESTIGO<br>
+			<br><br>
+			__________________________________________<br>
+			Sr. Vicente Bejarano Casillas
+			</td>
+			<td style="vertical-align: top; text-align: center; width: 100px;"><br>
+			</td>
+			<td style="vertical-align: top; text-align: center;">TESTIGO<br>
+			<br><br>
+			__________________________________________<br>
+			{nombrevendedor}
+			</td>
+			</tr>
+			</tbody>
+			</table>
+			** N&uacute;mero de Autorizaci&oacute;n de la Profeco: PFC.B.E.7/007544-2015 **
+			</body>
+			</html>
+			"""
+	pdfkit.from_string(template, 'out.pdf')
+	response = FileResponse('out.pdf', request=request, content_type='application/pdf')
+	return response
 
 @view_config( route_name = "otro", renderer= "json", request_method = "GET")
 def otro(request):

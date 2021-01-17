@@ -53,6 +53,7 @@ def main(global_config, **settings):
     config.add_route('useremail','/api/useremail')
     config.add_route('deleteprinter','/api/deleteprinter')
     config.add_route('otro','/api/otro')
+    config.add_route('otroprint','/api/otroprint')
     config.add_route('oauth', '/api/oauth')
     config.add_route('refreshtoken', '/api/refreshgoogletoken')
     config.add_route('ropiclar', '/api/ropiclar')
