@@ -50,7 +50,7 @@ import os
 
 #c2p=CantidadAPalabras
 
-redis_host, redis_port, redis_db  = "127.0.0.1", 6379, 5
+redis_host, redis_port, redis_db  = "10.0.1.124", 6379, 5
 redis_conn = None
 formato_comas = "{:,.2f}"
 
@@ -165,7 +165,7 @@ def arranque( event ):
 	color("nbb checking...")
 	#color("enbb function value {}".format(enbb.tableCount()),'g')
 	#color("nbb function value {}".format(len(nbb.venta_por_vendedor_arcadia())),'g')
-	#rdb.connect(settings.get("rethinkdb.host"), settings.get("rethinkdb.port")).repl()
+	rdb.connect(settings.get("rethinkdb.host"), settings.get("rethinkdb.port")).repl()
 	redis_conn = redis.Redis(host = redis_host, port = redis_port, db = redis_db )
 	cd = redis_conn.get("zeniclar-current-deploy")
 	try:
@@ -12398,6 +12398,12 @@ def otroprint(request):
 		pagomensualq = formato_comas.format(float(general['pagomensualfijo']))
 		pagomensuall = aletras(float(general['pagomensualfijo']), tipo="pesos")
 		fechadia, fechames, fechaano = str(general['fechaelaboracion']).split("/")
+
+		#aqui empeiza validacion de si es a credito hace lo del if
+		if True:
+			if pagoextra:
+				pass
+				
 
 
 	c2p1 = f"""
