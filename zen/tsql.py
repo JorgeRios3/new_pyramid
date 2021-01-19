@@ -1,8 +1,9 @@
 from subprocess import check_output, CalledProcessError
 from traceback import print_exc
 
-def inmueblesdisponibles(etapa = 0, env = ""):
-    #print "etapa,url", etapa, env
+
+def inmueblesdisponibles(etapa=0, env=""):
+    # print "etapa,url", etapa, env
     if not env:
         return list()
     if env == "prod":
@@ -12,15 +13,15 @@ def inmueblesdisponibles(etapa = 0, env = ""):
     print "command_line", command_line
     command_list = command_line.split(" ")
     try:
-        output = check_output( command_list)
-        #print "output mide", len(output)
+        output = check_output(command_list)
+        # print "output mide", len(output)
         principio = False
         a = list()
-        for rec, line in enumerate(output.split("\n"),1):
+        for rec, line in enumerate(output.split("\n"), 1):
             print "rec es", rec
             if "codigo" in line:
                 principio = True
-                #print "principio es True"
+                # print "principio es True"
                 continue
             if principio:
                 record = list(line.split("\t"))
@@ -32,19 +33,27 @@ def inmueblesdisponibles(etapa = 0, env = ""):
                     condominio = record[4] or ""
                     domicilioOficial = record[5] or ""
                 except:
-                    #print_exc()
+                    # print_exc()
                     continue
                 if etapa and xetapa <> etapa:
                     continue
-                a.append( dict( id = id, manzana = manzana, lote = lote, condominio = condominio, domicilioOficial = domicilioOficial  ))
-                #print "agregando rec", rec
-                
-    except CalledProcessError,e:
-        #return e.output
+                a.append(
+                    dict(
+                        id=id,
+                        manzana=manzana,
+                        lote=lote,
+                        condominio=condominio,
+                        domicilioOficial=domicilioOficial,
+                    )
+                )
+                # print "agregando rec", rec
+
+    except CalledProcessError, e:
+        # return e.output
         print_exc()
         pass
     except:
         print "tronando por otro lado"
         print_exc()
-    #print "a vale", a
+    # print "a vale", a
     return a

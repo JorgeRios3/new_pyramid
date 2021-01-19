@@ -1,11 +1,13 @@
 import calendar
 
-def psql(sql):
-	sql = sql.replace("\n", " ")
-	sql = sql.replace("\t", " ")
-	return sql 
 
-def asignadasporsemana(cn, semanas = 10, et = "", w = 750, h = 350):
+def psql(sql):
+    sql = sql.replace("\n", " ")
+    sql = sql.replace("\t", " ")
+    return sql
+
+
+def asignadasporsemana(cn, semanas=10, et="", w=750, h=350):
     semanas = int(semanas)
     c = calendar.Calendar()
     hoy = calendar.datetime.datetime.today()
@@ -23,9 +25,9 @@ def asignadasporsemana(cn, semanas = 10, et = "", w = 750, h = 350):
     meses = int((semanas / 4) + 4)
     days_interval = []
     for mes in range(meses):
-        for dn, wd in c.itermonthdays2(yr,mt):
-           if dn:
-               days_interval.append([yr,mt,dn,wd])
+        for dn, wd in c.itermonthdays2(yr, mt):
+            if dn:
+                days_interval.append([yr, mt, dn, wd])
         if mt == 1:
             mt = 12
             yr -= 1
@@ -44,30 +46,52 @@ def asignadasporsemana(cn, semanas = 10, et = "", w = 750, h = 350):
         additionalWhere = " and fk_etapa = %s " % et
     for i, v in enumerate(days_interval):
         if v[0] == y and v[1] == m and v[2] == d:
-           for j in range(i, len(days_interval)):
-               if days_interval[j][3] == 5:
-                   for semana in range(semanas):
-                       periodo = "Semana del %02d/%s/%04d al %02d/%s/%04d" % (days_interval[j][2], lmeses[days_interval[j][1]], days_interval[j][0], days_interval[j-6][2], lmeses[days_interval[j-6][1]], days_interval[j-6][0])
-                       tip[orden] = periodo
-                       fini = "%04d/%02d/%02d" % (days_interval[j][0], days_interval[j][1], days_interval[j][2])
-                       ffin = "%04d/%02d/%02d" % (days_interval[j-6][0], days_interval[j-6][1], days_interval[j-6][2])
-                       sql = " %s select %s, count(*) from ofertas_compra where fk_etapa >= 39 and convert(varchar(10), fecha_asignacion, 111) between '%s' and '%s' and asignada = 1 and cancelada <> 1  %s" % (union, orden, fini, ffin, additionalWhere)
-                       query.append(sql)
-                       union = "union"
-                       j += 7
-                       orden -= 1
-                   break
-           break
+            for j in range(i, len(days_interval)):
+                if days_interval[j][3] == 5:
+                    for semana in range(semanas):
+                        periodo = "Semana del %02d/%s/%04d al %02d/%s/%04d" % (
+                            days_interval[j][2],
+                            lmeses[days_interval[j][1]],
+                            days_interval[j][0],
+                            days_interval[j - 6][2],
+                            lmeses[days_interval[j - 6][1]],
+                            days_interval[j - 6][0],
+                        )
+                        tip[orden] = periodo
+                        fini = "%04d/%02d/%02d" % (
+                            days_interval[j][0],
+                            days_interval[j][1],
+                            days_interval[j][2],
+                        )
+                        ffin = "%04d/%02d/%02d" % (
+                            days_interval[j - 6][0],
+                            days_interval[j - 6][1],
+                            days_interval[j - 6][2],
+                        )
+                        sql = (
+                            " %s select %s, count(*) from ofertas_compra where fk_etapa >= 39 and convert(varchar(10), fecha_asignacion, 111) between '%s' and '%s' and asignada = 1 and cancelada <> 1  %s"
+                            % (union, orden, fini, ffin, additionalWhere)
+                        )
+                        query.append(sql)
+                        union = "union"
+                        j += 7
+                        orden -= 1
+                    break
+            break
 
     sql = " ".join(query)
     sql = "{} order by 1 desc".format(sql)
     ventas = []
-    for i, valor in enumerate(cn.execute(sql),1):
-        ventas.append(dict(id = i, semana = int(valor[0]), valor = valor[1], intervalo = tip[int(valor[0])]))
+    for i, valor in enumerate(cn.execute(sql), 1):
+        ventas.append(
+            dict(
+                id=i, semana=int(valor[0]), valor=valor[1], intervalo=tip[int(valor[0])]
+            )
+        )
     return ventas
 
 
-def ventasporsemana(cn, semanas = 10, et = "", w = 750, h = 350):
+def ventasporsemana(cn, semanas=10, et="", w=750, h=350):
     semanas = int(semanas)
     c = calendar.Calendar()
     hoy = calendar.datetime.datetime.today()
@@ -85,9 +109,9 @@ def ventasporsemana(cn, semanas = 10, et = "", w = 750, h = 350):
     meses = int((semanas / 4) + 4)
     days_interval = []
     for mes in range(meses):
-        for dn, wd in c.itermonthdays2(yr,mt):
-           if dn:
-               days_interval.append([yr,mt,dn,wd])
+        for dn, wd in c.itermonthdays2(yr, mt):
+            if dn:
+                days_interval.append([yr, mt, dn, wd])
         if mt == 1:
             mt = 12
             yr -= 1
@@ -106,33 +130,55 @@ def ventasporsemana(cn, semanas = 10, et = "", w = 750, h = 350):
         additionalWhere = " and fk_etapa = %s " % et
     for i, v in enumerate(days_interval):
         if v[0] == y and v[1] == m and v[2] == d:
-           for j in range(i, len(days_interval)):
-               if days_interval[j][3] == 5:
-                   for semana in range(semanas):
-                       periodo = "Semana del %02d/%s/%04d al %02d/%s/%04d" % (days_interval[j][2], lmeses[days_interval[j][1]], days_interval[j][0], days_interval[j-6][2], lmeses[days_interval[j-6][1]], days_interval[j-6][0])
-                       tip[orden] = periodo
-                       fini = "%04d/%02d/%02d" % (days_interval[j][0], days_interval[j][1], days_interval[j][2])
-                       ffin = "%04d/%02d/%02d" % (days_interval[j-6][0], days_interval[j-6][1], days_interval[j-6][2])
-                       sql = " %s select %s, count(*) from ofertas_compra where fk_etapa >= 39 and convert(varchar(10), fecha_oferta, 111) between '%s' and '%s' %s" % (union, orden, fini, ffin, additionalWhere)
-                       query.append(sql)
-                       union = "union"
-                       j += 7
-                       orden -= 1
-                   break
-           break
+            for j in range(i, len(days_interval)):
+                if days_interval[j][3] == 5:
+                    for semana in range(semanas):
+                        periodo = "Semana del %02d/%s/%04d al %02d/%s/%04d" % (
+                            days_interval[j][2],
+                            lmeses[days_interval[j][1]],
+                            days_interval[j][0],
+                            days_interval[j - 6][2],
+                            lmeses[days_interval[j - 6][1]],
+                            days_interval[j - 6][0],
+                        )
+                        tip[orden] = periodo
+                        fini = "%04d/%02d/%02d" % (
+                            days_interval[j][0],
+                            days_interval[j][1],
+                            days_interval[j][2],
+                        )
+                        ffin = "%04d/%02d/%02d" % (
+                            days_interval[j - 6][0],
+                            days_interval[j - 6][1],
+                            days_interval[j - 6][2],
+                        )
+                        sql = (
+                            " %s select %s, count(*) from ofertas_compra where fk_etapa >= 39 and convert(varchar(10), fecha_oferta, 111) between '%s' and '%s' %s"
+                            % (union, orden, fini, ffin, additionalWhere)
+                        )
+                        query.append(sql)
+                        union = "union"
+                        j += 7
+                        orden -= 1
+                    break
+            break
 
     sql = " ".join(query)
     sql = "{} order by 1 desc".format(sql)
-    
+
     ventas = []
-    for i, valor in enumerate(cn.execute(sql),1):
-        ventas.append(dict(id = i, semana = int(valor[0]), valor = valor[1], intervalo = tip[int(valor[0])]))
+    for i, valor in enumerate(cn.execute(sql), 1):
+        ventas.append(
+            dict(
+                id=i, semana=int(valor[0]), valor=valor[1], intervalo=tip[int(valor[0])]
+            )
+        )
     for x in ventas:
         print(x)
     return ventas
 
 
-def cobradasporsemana(cn, semanas = 10, et = "", w = 750, h = 350):
+def cobradasporsemana(cn, semanas=10, et="", w=750, h=350):
     semanas = int(semanas)
     c = calendar.Calendar()
     hoy = calendar.datetime.datetime.today()
@@ -150,9 +196,9 @@ def cobradasporsemana(cn, semanas = 10, et = "", w = 750, h = 350):
     meses = int((semanas / 4) + 4)
     days_interval = []
     for mes in range(meses):
-        for dn, wd in c.itermonthdays2(yr,mt):
-           if dn:
-               days_interval.append([yr,mt,dn,wd])
+        for dn, wd in c.itermonthdays2(yr, mt):
+            if dn:
+                days_interval.append([yr, mt, dn, wd])
         if mt == 1:
             mt = 12
             yr -= 1
@@ -171,54 +217,87 @@ def cobradasporsemana(cn, semanas = 10, et = "", w = 750, h = 350):
         additionalWhere = " and i.fk_etapa = %s " % et
     for i, v in enumerate(days_interval):
         if v[0] == y and v[1] == m and v[2] == d:
-           for j in range(i, len(days_interval)):
-               if days_interval[j][3] == 5:
-                   for semana in range(semanas):
-                       periodo = "Semana del %02d/%s/%04d al %02d/%s/%04d" % (days_interval[j][2], lmeses[days_interval[j][1]], days_interval[j][0], days_interval[j-6][2], lmeses[days_interval[j-6][1]], days_interval[j-6][0])
-                       tip[orden] = periodo
-                       fini = "%04d/%02d/%02d" % (days_interval[j][0], days_interval[j][1], days_interval[j][2])
-                       ffin = "%04d/%02d/%02d" % (days_interval[j-6][0], days_interval[j-6][1], days_interval[j-6][2])
-                       sql = " %s select %s , count(* ) from tramites_ventas_movimientos t join inmueble i on t.fk_inmueble = i.codigo where i.fk_etapa >= 39 and t.fk_tramite = 105 and convert(varchar(10), t.fecha, 111) between '%s' and '%s' %s" % (union, orden, fini, ffin, additionalWhere)
-                       
-                       query.append(sql)
-                       union = "union"
-                       j += 7
-                       orden -= 1
-                   break
-           break
+            for j in range(i, len(days_interval)):
+                if days_interval[j][3] == 5:
+                    for semana in range(semanas):
+                        periodo = "Semana del %02d/%s/%04d al %02d/%s/%04d" % (
+                            days_interval[j][2],
+                            lmeses[days_interval[j][1]],
+                            days_interval[j][0],
+                            days_interval[j - 6][2],
+                            lmeses[days_interval[j - 6][1]],
+                            days_interval[j - 6][0],
+                        )
+                        tip[orden] = periodo
+                        fini = "%04d/%02d/%02d" % (
+                            days_interval[j][0],
+                            days_interval[j][1],
+                            days_interval[j][2],
+                        )
+                        ffin = "%04d/%02d/%02d" % (
+                            days_interval[j - 6][0],
+                            days_interval[j - 6][1],
+                            days_interval[j - 6][2],
+                        )
+                        sql = (
+                            " %s select %s , count(* ) from tramites_ventas_movimientos t join inmueble i on t.fk_inmueble = i.codigo where i.fk_etapa >= 39 and t.fk_tramite = 105 and convert(varchar(10), t.fecha, 111) between '%s' and '%s' %s"
+                            % (union, orden, fini, ffin, additionalWhere)
+                        )
+
+                        query.append(sql)
+                        union = "union"
+                        j += 7
+                        orden -= 1
+                    break
+            break
 
     sql = " ".join(query)
     sql = "{} order by 1 desc".format(sql)
     cobradas = []
-    for i, valor in enumerate(cn.execute(sql),1):
-        cobradas.append(dict(id = i, semana = int(valor[0]), valor = valor[1], intervalo = tip[int(valor[0])]))
+    for i, valor in enumerate(cn.execute(sql), 1):
+        cobradas.append(
+            dict(
+                id=i, semana=int(valor[0]), valor=valor[1], intervalo=tip[int(valor[0])]
+            )
+        )
     return cobradas
 
-def ventaspordia(cn, tipo = "1"):
+
+def ventaspordia(cn, tipo="1"):
     lista = []
-    dias = ["Nada", "Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"]
+    dias = [
+        "Nada",
+        "Domingo",
+        "Lunes",
+        "Martes",
+        "Miercoles",
+        "Jueves",
+        "Viernes",
+        "Sabado",
+    ]
     sql = """select datepart(dw, t.fecha_oferta) as dia,
      avg(t.total) as promedio, sum(t.total) as total 
      from (select fecha_oferta, count(*) as total
      from ofertas_compra where fk_etapa >= 39 group by fecha_oferta) as t
      group by datepart(dw,t.fecha_oferta) order by 1"""
-    
-    if tipo == "1":
-    	titulo = "Promedios por Dia"
-    else:
-    	titulo = "Totales por Dia"
 
-    for i, x in enumerate(cn.execute(psql(sql)),1):
+    if tipo == "1":
+        titulo = "Promedios por Dia"
+    else:
+        titulo = "Totales por Dia"
+
+    for i, x in enumerate(cn.execute(psql(sql)), 1):
         if tipo == "1":
             valor = x.promedio
-            
+
         else:
             valor = x.total
-        lista.append( dict(id = i, dia = dias[x.dia], valor = valor ))
-        
+        lista.append(dict(id=i, dia=dias[x.dia], valor=valor))
+
     return lista
 
-def panoramacomercial(cn, etapa = "", breve = {}):
+
+def panoramacomercial(cn, etapa="", breve={}):
     rubros = [
         "Libres",
         "Ventas Activas por Ingresar",
@@ -228,18 +307,20 @@ def panoramacomercial(cn, etapa = "", breve = {}):
         "Capturados",
         "En Firma de Escrituras",
         "Firmadas sin Cotejo",
-        "Cotejadas"
+        "Cotejadas",
     ]
     additionalWhere = ""
     if etapa:
-    	additionalWhere = " and fk_etapa = {}".format(etapa)
+        additionalWhere = " and fk_etapa = {}".format(etapa)
 
     sql = """
         select count(*) as cuantos from inmueble
         where codigo not in 
         ( select fk_inmueble from cuenta) and 
-        fk_etapa > 39 {}""".format(additionalWhere)
-    
+        fk_etapa > 39 {}""".format(
+        additionalWhere
+    )
+
     for row in cn.execute(psql(sql)):
         libres = row.cuantos
 
@@ -274,7 +355,7 @@ def panoramacomercial(cn, etapa = "", breve = {}):
         where i.fk_etapa >= 39 and
         f.solicitud = 1 and f.requisito = 87 and f.fecha_termino is not null)
         group by i.fk_etapa ) x group by etapa"""
-    
+
     dicAsigPorCerrar = dict()
     for x in las_etapas:
         dicAsigPorCerrar[x] = 0
@@ -300,35 +381,51 @@ def panoramacomercial(cn, etapa = "", breve = {}):
     dicVtasActivasXIngresar = dict()
     totVtasActivasXIngresar = 0
     for row in cn.execute(psql(sql)):
-        suman = row.cuantos + dicAsigPorCerrar.get(row.etapa,0)
+        suman = row.cuantos + dicAsigPorCerrar.get(row.etapa, 0)
         dicVtasActivasXIngresar[row.etapa] = suman
         totVtasActivasXIngresar += suman
-    
+
     sql = """
        select codigo as etapa from etapa where codigo > 39 and codigo not in 
        ({})
-    """.format( ",".join([str(x) for x in list(dicVtasActivasXIngresar.keys())]) )
+    """.format(
+        ",".join([str(x) for x in list(dicVtasActivasXIngresar.keys())])
+    )
 
     for row in cn.execute(psql(sql)):
-    	cual =  dicAsigPorCerrar.get(row.etapa,0)
-    	totVtasActivasXIngresar += cual
-    	dicVtasActivasXIngresar[row.etapa] = cual
-    
+        cual = dicAsigPorCerrar.get(row.etapa, 0)
+        totVtasActivasXIngresar += cual
+        dicVtasActivasXIngresar[row.etapa] = cual
+
     vtasActivasXIngresar = totVtasActivasXIngresar
 
     if etapa:
-    	vtasActivasXIngresar = dicVtasActivasXIngresar[int(etapa)]
+        vtasActivasXIngresar = dicVtasActivasXIngresar[int(etapa)]
     print(breve["result"])
-    expConDetallesODif = [x.get("total") for x in breve["result"] if x.get("req") == "-37"][0]    
-    porCapturar = [x.get("total") for x in breve["result"] if x.get("req") == "-28"][0]   
-    capturados = [x.get("total") for x in breve["result"] if x.get("req") == "-29"][0]   
-    enFirma = [x.get("total") for x in breve["result"] if x.get("req") == "-30"][0]   
-    firmadasSinCotejo = [x.get("total") for x in breve["result"] if x.get("req") == "-31"][0]   
-    cotejadas = [x.get("total") for x in breve["result"] if x.get("req") == "-32"][0]   
-    sample = [ libres, vtasActivasXIngresar, expConDetallesODif, asignadasPorCerrar, porCapturar, capturados, enFirma, firmadasSinCotejo, cotejadas ]
+    expConDetallesODif = [
+        x.get("total") for x in breve["result"] if x.get("req") == "-37"
+    ][0]
+    porCapturar = [x.get("total") for x in breve["result"] if x.get("req") == "-28"][0]
+    capturados = [x.get("total") for x in breve["result"] if x.get("req") == "-29"][0]
+    enFirma = [x.get("total") for x in breve["result"] if x.get("req") == "-30"][0]
+    firmadasSinCotejo = [
+        x.get("total") for x in breve["result"] if x.get("req") == "-31"
+    ][0]
+    cotejadas = [x.get("total") for x in breve["result"] if x.get("req") == "-32"][0]
+    sample = [
+        libres,
+        vtasActivasXIngresar,
+        expConDetallesODif,
+        asignadasPorCerrar,
+        porCapturar,
+        capturados,
+        enFirma,
+        firmadasSinCotejo,
+        cotejadas,
+    ]
     lista = []
-    
+
     if True:
-        for i, x in enumerate(list(range(0,len(rubros))),1):
-        	lista.append(dict(id = i, rubro = rubros[x], valor = sample[x]))
+        for i, x in enumerate(list(range(0, len(rubros))), 1):
+            lista.append(dict(id=i, rubro=rubros[x], valor=sample[x]))
         return lista

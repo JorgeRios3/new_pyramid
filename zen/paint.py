@@ -1,14 +1,18 @@
 def yellow(data):
-	return data
+    return data
+
 
 def blue(data):
-	return data
+    return data
+
 
 def red(data):
-	return data
+    return data
+
 
 def cyan(data):
-	return data
+    return data
+
 
 def green(data):
-	return data
+    return data
