@@ -83,7 +83,7 @@ formato_comas = "{:,.2f}"
 
 rdb = RethinkDB()
 
-rdb.connect("127.0.0.1", 28015).repl()
+#rdb.connect("127.0.0.1", 28015).repl()
 
 
 def color(what, c="b"):
@@ -126,8 +126,8 @@ def anyrequest(event):
     soy = s.get("pyraconfig", "indefinido")
     req = "{}.{} {}".format(soy, today(), event.request.path_qs)
     color(req, "c")
-    # c = redis.Redis(host = s.get("redis.host"), port = s.get("redis.port"), db = 0 )
-    c = redis.Redis(host="127.0.0.1", port=6379, db=8)
+    c = redis.Redis(host = s.get("redis.host"), port = s.get("redis.port"), db = 0 )
+    #c = redis.Redis(host="127.0.0.1", port=6379, db=8)
     c.publish("pyramid.request", req)
     # c.set("pyramid.request", req)
     # c.set(req,1)
