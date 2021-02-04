@@ -39,7 +39,6 @@ from datetime import datetime
 import json
 import xlwt
 from boto import sts
-from rethinkdb import RethinkDB
 from urllib.request import urlopen
 from expiringdict import ExpiringDict
 from hashlib import md5, sha1
@@ -81,7 +80,8 @@ redis_host, redis_port, redis_db = "10.0.1.124", 6379, 5
 redis_conn = None
 formato_comas = "{:,.2f}"
 
-rdb = RethinkDB()
+#from rethinkdb import RethinkDB
+#rdb = RethinkDB()
 
 #rdb.connect("127.0.0.1", 28015).repl()
 
@@ -148,7 +148,7 @@ def esProduccion():
 
 @subscriber(ApplicationCreated)
 def arranque(event):
-    global redis_conn
+    global redis_conn, rdb
     settings = event.app.registry.settings
     cached = cached_results.settings
     redis_host = settings.get("redis.host", "")
@@ -171,9 +171,13 @@ def arranque(event):
 
     if "TEST" in cached["sqlalchemy.url"]:
         cached["pyraconfig"] = "test"
+        from rethinkdb import RethinkDB
+        rdb = RethinkDB()
 
     else:
         cached["pyraconfig"] = "prod"
+        import rethinkdb as r
+        rdb = r
 
     enbb.start(esProduccion())
 
@@ -9672,11 +9676,13 @@ def arcadiacuadro(enganche=False):
         row["id"] = i
         for i, x in enumerate(range(2003, int(tiempo.date.today().year) + 1)):
             row["a{}".format(x)] = lista[i][mes]
+            row['id']=f"{mes}{i}"
         resultado.append(row)
     row = dict()
     row["mes"] = "total"
     for i, x in enumerate(range(2003, int(tiempo.date.today().year) + 1)):
         row["a{}".format(x)] = lista[i]["total"]
+        row['id']=f"{i}"
     resultado.append(row)
 
     # row=["total"]
