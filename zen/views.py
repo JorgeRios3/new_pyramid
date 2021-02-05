@@ -14556,41 +14556,29 @@ def otroprint(request):
         # aqui empeiza validacion de si es a credito hace lo del if
         if True:
             if pagoextra:
-                pass
-
-    c2p1 = f"""
-					<div style="text-align: justify;"><br>1.- La cantidad de ${engancheq},
-					({enganchel}), que manifiesta "LA PROMITENTE VENDEDORA" recibir en
-					este acto a su entera satisfacción, sirviendo el presente contrato de
-					formal recibo por la entrega de dicha cantidad.<br>
-					</div>
-					<div style="text-align: justify;"><br>2.- El resto de la contraprestación o
-					sea la cantidad de ${restoq}, ({restol}) la deberá pagar
-					"EL(LOS) PROMITENTE(S) COMPRADOR(ES)" mediante {plazomeses} amortizaciones
-					de la siguiente forma:<br><br>
-					</div>
-					"""
-    tableheader = """
-				        <div style="text-align: right;">
-					<span style="font-weight: bold; font-style: italic;">
-					No. de Pago&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-					Fecha de Pago&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-					Saldo Inicial&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-					Pago&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-					Saldo Final&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-					</span></div>
-					"""
-    # c2p1 += tableheader
-
-    header = f"""<!DOCTYPE html>
-	<html>
-		<head>
-		<meta charset="UTF-8">
-		</head>
-		<body>
-			Code of your header goes here
-		</body>
-	</html>"""
+                c2p1 = f"""
+                <div style="text-align: justify;"><br>1.- La cantidad de ${engancheq},
+                ({enganchel}), que manifiesta "LA PROMITENTE VENDEDORA" recibir en
+                este acto a su entera satisfacción, sirviendo el presente contrato de
+                formal recibo por la entrega de dicha cantidad.<br>
+                </div>
+                <div style="text-align: justify;"><br>2.- El resto de la contraprestación o
+                sea la cantidad de ${restoq}, ({restol}) la deberá pagar
+                "EL(LOS) PROMITENTE(S) COMPRADOR(ES)" mediante {plazomeses} amortizaciones
+                de la siguiente forma:<br><br>
+                </div>
+                """
+        tableheader = """
+        <div style="text-align: right;">
+        <span style="font-weight: bold; font-style: italic;">
+        No. de Pago&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        Fecha de Pago&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        Saldo Inicial&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        Pago&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        Saldo Final&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        </span></div>
+        """
+        c2p1 += tableheader
 
     template = f"""<html>
 		<head>
@@ -14896,7 +14884,7 @@ def otroprint(request):
 			firman por duplicado en la Ciudad de Guadalajara, Jalisco, a los
 			{fechadia} días del mes de {fechames} de {fechaano}.<br><br><br>
 			</div>
-			<div style="text-align: center;"><br>"LA PROMITENTE VENDEDORA"<br>
+			<div style="text-align: center;"><br>"LA PROMITENTE VENDEDORA"<br>{razonsocial}
 			<br><br>
 			_______________________________________________<br>
 			<br>
