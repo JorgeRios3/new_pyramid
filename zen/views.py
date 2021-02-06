@@ -6187,6 +6187,7 @@ class ClienteCuantoFiltro(EAuth, QueryAndErrors):
             raise ZenError(1)
 
     def collection_get(self):
+        print("entro aqui clientecuantofiltros")
         que, record, token = self.auth(get_token=True)
         cualquiera = "TD"
         if not que:
@@ -6196,7 +6197,8 @@ class ClienteCuantoFiltro(EAuth, QueryAndErrors):
         # CC = cuenta con saldo CS = cuenta sin saldo CV = cuenta vigente
 
         nombre = self.request.params.get("nombre", "")
-        nombre = nombre.replace("%", "")
+        company = self.request.params.get("company", "")
+        #nombre = nombre.replace("%", "")
         if len(nombre) < 2:
             return dict(clientecuantofiltros=[])
         etapa = self.request.params.get("etapa", "")
@@ -6205,8 +6207,10 @@ class ClienteCuantoFiltro(EAuth, QueryAndErrors):
         except:
             etapa = ""
         where_etapa = ""
+        join_etapa = ""
         if etapa:
-            where_etapa = " and cta.fk_etapa = {}".format(etapa)
+            join_etapa = "join inmueble i on cta.fk_inmueble = i.codigo"
+            where_etapa = " and i.fk_etapa = {}".format(etapa)
 
         where_saldo = ""
         if tipo == "CV":
@@ -6233,30 +6237,23 @@ class ClienteCuantoFiltro(EAuth, QueryAndErrors):
                 sql = """ select count(*) as cuantos
 				from cuenta cta  
 				join cliente cte on cte.codigo = cta.fk_cliente
+                {}
 				where 1 = 1 {} {} and cte.nombre like '%{}%'
 				 """.format(
-                    where_saldo, where_etapa, self.upper(nombre)
+                    join_etapa, where_etapa, where_saldo, self.upper(nombre)
                 )
 
             sql = preparaQuery(sql)
-            # sql = sql.encode("iso-8859-1")
-            engine = Base.metadata.bind
-            poolconn = engine.connect()
-            c = poolconn.connection
-            cu = c.cursor()
-            r = []
-            # for i,x in enumerate(DBSession.execute( sql ),1):
-            for i, x in enumerate(cu.execute(sql), 1):
+            session = None
+            if company == "arcadia":
+                session = DBSession2
+            else:
+                session = DBSession
+            r=[]
+            for i,x in enumerate(session.execute( sql ),1):
                 r.append(dict(id=1, cuantos=x.cuantos))
-            cu.close()
-            print(sql)
             color("se resolvio query clientefiltros {} {}".format(tipo, len(r)))
-            try:
-                poolconn.close()
-            except:
-                pass
             return dict(clientecuantofiltros=r)
-
         except:
             print_exc()
             try:
@@ -6291,9 +6288,9 @@ class ClienteFiltro(EAuth, QueryAndErrors):
             return dict(clientefiltros=[])
         tipo = self.request.params.get("tipo", cualquiera)
         # CC = cuenta con saldo CS = cuenta sin saldo CV = cuenta vigente
-
+        company = self.request.params.get("company", "")
         nombre = self.request.params.get("nombre", "")
-        nombre = nombre.replace("%", "")
+        #nombre = nombre.replace("%", "")
         if len(nombre) < 2:
             return dict(clientefiltros=[])
         etapa = self.request.params.get("etapa", "")
@@ -6302,8 +6299,10 @@ class ClienteFiltro(EAuth, QueryAndErrors):
         except:
             etapa = ""
         where_etapa = ""
+        join_etapa = ""
         if etapa:
-            where_etapa = " and cta.fk_etapa = {}".format(etapa)
+            join_etapa = "join inmueble i on cta.fk_inmueble = i.codigo"
+            where_etapa = " and i.fk_etapa = {}".format(etapa)
 
         where_saldo = ""
         if tipo == "CV":
@@ -6332,52 +6331,31 @@ class ClienteFiltro(EAuth, QueryAndErrors):
 				cta.saldo as saldo, cte.codigo as cliente
 				from cuenta cta  
 				join cliente cte on cte.codigo = cta.fk_cliente
+                {}
 				where 1 = 1 {} {} and cte.nombre like '%{}%'
 				order by cte.nombre """.format(
-                    where_saldo, where_etapa, self.upper(nombre)
+                   join_etapa, where_etapa, where_saldo, self.upper(nombre)
                 )
-
             sql = preparaQuery(sql)
-            # sql = sql.encode("iso-8859-1")
-            # engine = Base.metadata.bind
-            # poolconn = engine.connect()
-            # c = poolconn.connection
-            # cu = c.cursor()
+            print("viendo el query")
+            print(sql)
             r = []
-            company = self.request.params.get("company", "")
-            if company:
-                for i, x in enumerate(DBSession2.execute(sql), 1):
-                    # for i,x in enumerate(cu.execute(sql),1):
-                    r.append(
-                        dict(
-                            id=int(x.cliente),
-                            cuenta=int(x.cuenta),
-                            nombre=x.nombre,
-                            saldo=str(x.saldo),
-                        )
-                    )
-                # cu.close()
-                print(sql)
-                color("se resolvio query clientefiltros {} {}".format(tipo, len(r)))
+            session = None
+            if company == "arcadia":
+                session = DBSession2
             else:
-
-                for i, x in enumerate(DBSession.execute(sql), 1):
-                    # for i,x in enumerate(cu.execute(sql),1):
-                    r.append(
-                        dict(
-                            id=int(x.cliente),
-                            cuenta=int(x.cuenta),
-                            nombre=x.nombre,
-                            saldo=str(x.saldo),
-                        )
+                session = DBSession
+            for i, x in enumerate(session.execute(sql), 1):
+                r.append(
+                    dict(
+                        id=int(x.cliente),
+                        cuenta=int(x.cuenta),
+                        nombre=x.nombre,
+                        saldo=str(x.saldo),
                     )
-                # cu.close()
-                print(sql)
-                color("se resolvio query clientefiltros {} {}".format(tipo, len(r)))
-            # try:
-            # 	poolconn.close()
-            # except:
-            # 	pass
+                )
+            print(sql)
+            color("se resolvio query clientefiltros {} {}".format(tipo, len(r)))
             return dict(clientefiltros=r)
 
         except:
@@ -9689,8 +9667,6 @@ def arcadiacuadro(enganche=False):
     # for i, x in enumerate(range(2003, int(tiempo.date.today().year)+1)):
     #    row["a{}".format(x)]=1
     # resultado.append()
-
-    # print("resultado")
     return resultado
 
 
@@ -9708,77 +9684,6 @@ class VentasCuadroArcadia(EAuth):
             meta=dict(maxyear=today(False).year),
             ventascuadroarcadias=arcadiacuadro(eng),
         )
-
-
-@resource(
-    collection_path="api/ventascuadroarcadiasss", path="api/ventascuadroarcadiasss/{id}"
-)
-class VentasCuadroArcadias(EAuth):
-    def __init__(self, request, context=None):
-        self.request = request
-
-    def collection_get(self):
-        print("here")
-        que, record, token = self.auth(get_token=True)
-        if not que:
-            return dict(ventascuadroarcadias=[])
-        p = self.request.params
-        vendedor = p.get("vendedor", 0)
-        eng = p.get("enganche", "")
-        enganche = False
-        if eng:
-            enganche = True
-            print("here2")
-            # resultado = enbb.venta_por_vendedor_arcadia_terrenos() #enbbcall("gerentecomision")
-            # resultado = enbb.venta_por_vendedor_arcadia() #enbbcall("gerentecomision")
-            # areturn json.loads(enbb.process_request(func="gerentecomision", source="pyramid-zen", user="pyramid-zen"))
-        # resultado = nbb.venta_por_vendedor_arcadia(vendedor = vendedor, con_enganche = enganche)
-        print("here3")
-        m = "Foo Ene Feb Mar Abr May Jun Jul Ago Sep Oct Nov Dic"
-        meses = m.split(" ")
-        cuadro = dict()
-        years = set()
-        totales = dict()
-        lista = [[x] for x in range(2003, 2021)]
-        resultado = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
-        return dict(
-            meta=dict(maxyear=today(False).year),
-            ventascuadroarcadias=[
-                dict(mes="Ene", a2003=10, a2010=30),
-                dict(mes="Feb", a2004=5),
-            ],
-        )
-        for x in lista:  # for x in resultado:
-            years.add(x[0])
-        years.add(today(False).year)
-
-        for x in years:
-            totales[x] = 0
-
-        for x in range(1, 13):
-            d = dict(id=x, mes=meses[x])
-            for year in years:
-                d["a{}".format(year)] = 0
-            cuadro[x] = d
-
-        cuadro[13] = dict(id=13, mes="Total")
-        for x in resultado:
-            row = cuadro[x[1]]
-            row["a{}".format(x[0])] = x[2]
-            totales[x[0]] += x[2]
-            cuadro[x[1]] = row
-
-        for year in years:
-            row = cuadro[13]
-            row["a{}".format(year)] = totales[year]
-            cuadro[13] = row
-
-        lista = []
-
-        for x in range(1, 14):
-            lista.append(cuadro[x])
-
-        return dict(meta=dict(maxyear=today(False).year), ventascuadroarcadias=lista)
 
 
 @resource(collection_path="api/categoriasmenus", path="api/categoriasmenus/{id}")
@@ -11116,8 +11021,8 @@ class EtapasTramites(EAuth):
             id = cual
             departamento = x.departamento
             nombre = "{} - {}".format(
-                x.desarrollo.decode("iso-8859-1").encode("utf-8"),
-                x.etapa.decode("iso-8859-1").encode("utf-8"),
+                x.desarrollo,
+                x.etapa,
             )
         if id:
             print("si regreso algo")
@@ -11158,6 +11063,16 @@ class EtapasTramites(EAuth):
 				'Etapa 1' as etapa,
 				'Pinares Tapalpa' as desarrollo,
 				'1' as departamento
+                union
+				select 34 as netapa,
+				'Etapa 5' as etapa,
+				'Pinares Tapalpa' as desarrollo,
+				'1' as departamento
+                union
+				select 35 as netapa,
+				'Etapa 6' as etapa,
+				'Pinares Tapalpa' as desarrollo,
+				'1' as departamento
 				order by 1 desc
 				"""
 
@@ -11194,6 +11109,16 @@ class EtapasTramites(EAuth):
 				'Etapa 1' as etapa,
 				'Pinares Tapalpa' as desarrollo,
 				'1' as departamento
+                union
+				select 34 as netapa,
+				'Etapa 5' as etapa,
+				'Pinares Tapalpa' as desarrollo,
+				'1' as departamento
+                union
+				select 35 as netapa,
+				'Etapa 6' as etapa,
+				'Pinares Tapalpa' as desarrollo,
+				'1' as departamento
 				order by 1 desc
 				"""
 
@@ -11213,8 +11138,14 @@ class EtapasTramites(EAuth):
         sql = sql.replace("\n", " ")
         sql = sql.replace("\t", " ")
         resul = []
+        session = None
+        print("llego aca")
+        if company == "arcadia":
+            session = DBSession2
+        else:
+            session = DBSession
         try:
-            for x in DBSession.execute(sql):
+            for x in session.execute(sql):
                 resul.append(
                     dict(
                         id=x.netapa,
@@ -12619,17 +12550,23 @@ class VendedoresArcadiaRest(EAuth):
         print("valores que, record, token", que, record, token)
         if not que:
             return dict(lotesdisponiblesarcadias=[])
-        sql = """select * from vendedor where activo<>0
+        sql = """select codigo as codigo , nombre as nombre , domicilio as domicilio, colonia as colonia, cp as cp , ciudad as ciudad, estado as estado , telefono as telefono, rfc as rfc, email as email from vendedor where activo<>0
 		"""
         resultado = []
         for i, x in enumerate(DBSession2.execute(preparaQuery(sql)), 1):
             resultado.append(
                 dict(
                     id=x.codigo,
-                    nombre=x.nombre,
                     codigo=x.codigo,
-                    email=x.email,
+                    nombre=x.nombre,
+                    domicilio=x.domicilio,
+                    colonia=x.colonia,
+                    cp=x.cp,
+                    ciudad=x.ciudad,
+                    estado=x.estado,
                     telefono=x.telefono,
+                    rfc=x.rfc,
+                    email=x.email
                 )
             )
         print("cayo aqui")
