@@ -12116,8 +12116,8 @@ class TotalesVendidosArcadiaRest(QueryAndErrors, EAuth):
 
 
 @resource(
-	collection_path="api/lotesindividualesarcadias",
-	path="api/lotesindividualesarcadias/{id}",
+	collection_path="api/lotesindividualesarcadiass",
+	path="api/lotesindividualesarcadiass/{id}",
 )
 class LotesIndividualesArcadiaRest(QueryAndErrors, EAuth):
 	def __init__(self, request, context=None):
@@ -12220,9 +12220,9 @@ class LotesIndividualesArcadiaRest(QueryAndErrors, EAuth):
 				resultado.append(
 					dict(
 						id=x.inmueble,
-						manzana=dec_enc(x.manzana),
-						lote=dec_enc(x.lote),
-						preciopormetro=x.preciopormetro,
+						manzana=x.manzana,
+						lote=x.lote),
+						preciopormetro=float(f"{x.preciopormetro}"),
 						inmueble=x.inmueble,
 						superficie=x.superficie,
 					)
@@ -14868,14 +14868,196 @@ def contrato_template(cuenta):
 	return template
 
 def pagare_template(cuenta):
+	ses = DBSession2
+	plazo = None
 	amortizacion = None
+	pagoextra = False
 	for x in ses.execute(f"select pkamortizacion as pk from gixamortizacion where cuenta={cuenta}"):
 		amortizacion=x.pk
-	query = f"""select convert(varchar(10), fechadepago, 111), numerodepago, pagofijo
-	from gixamortizaciondetalle
-	where fkamortizacion = {amortizacion} and eliminado <> 1
-	order by fechadepago, numerodepago
+	
+
+	query = f"""
+	select count(*) as cuantos from gixamortizaciondetalle
+	where fkamortizacion = {amortizacion} and eliminado = 0 and insertado <> 0
 	"""
+	for x in ses.execute(query):
+		if x.cuantos > 0:
+			pagoextra = True
+	
+	if pagoextra:
+		return GetHtmlPagarePagosExtras(amortizacion)
+	else:
+		return GetHtmlPagarePagos(amortizacion)
+
+def GetHtmlPagarePagosExtras():
+	return ""
+
+def GetHtmlPagarePagos(amortizacion):
+	#cuenta en 2
+	ses = DBSession2
+	mes = {1:"Enero", 2:"Febrero", 3:"Marzo", 4:"Abril", 5:"Mayo", 6:"Junio", 7:"Julio",
+			8:"Agosto", 9:"Septiembre", 10:"Octubre", 11:"Noviembre", 12:"Diciembre"}
+	
+	query = f"""
+	select count(*) as cuantos from gixamortizaciondetalle
+	where fkamortizacion = {amortizacion} and eliminado = 0
+	"""
+	for x in ses.execute(query):
+		cuantos = x.cuantos
+
+	query = f"""
+	select top(1) convert(varchar(10), fechadepago, 103) as fecha from gixamortizaciondetalle
+	where fkamortizacion = {amortizacion} and eliminado = 0 order by fecha
+	"""
+	for x in ses.execute(query):
+		di, mi, ai = x.fecha.split("/")
+	
+	query = f"""
+	select top(1) convert(varchar(10), fechadepago, 103) as fecha from gixamortizaciondetalle
+	where fkamortizacion = {amortizacion} and eliminado = 0 order by fecha desc
+	"""
+	for x in ses.execute(query):
+		df, mf, af = x.fecha.split("/")
+	
+	query = f"""
+	select count(*) as cuantos from gixamortizaciondetalle
+	where fkamortizacion = {amortizacion} and eliminado = 0
+	"""
+	for x in ses.execute(query):
+		plazotabla=x.cuantos
+	
+	query =f"""
+		select sum(pagofijo) as total from gixamortizaciondetalle where fkamortizacion = {amortizacion} and eliminado = 0
+		"""
+	for x in ses.execute(query):
+		totaltabla = x.total
+	
+	
+	query=f""" select pagomensualfijo as pago from gixamortizacion where pkamortizacion={amortizacion}"""
+	for x in ses.execute(query):
+		pagofijo = x.pago
+	#va en el 8
+	#pagomensualq = formato_comas.format(float(general["pagomensualfijo"]))
+	#pagomensuall = aletras(float(general["pagomensualfijo"]), tipo="pesos")
+	totaltablac = formato_comas.format(float(totaltabla))
+	totaltablal = aletras(float(totaltabla), tipo="pesos")
+	fechainicial = f"{int(di)} de {mes[int(mi)]} de {int(ai)}"
+	fechafinal = f"{int(df)} de {mes[int(mf)]} de {int(af)}"
+	pagofijoc = formato_comas.format(pagofijo)
+	pagofijol = aletras(pagofijo, tipo="pesos")
+
+	query = f"""
+	select c.nombre as nombre, c.domicilio as domicilio, c.colonia, as colonia,
+	c.telefonocasa as telcasa, ltrim(rtrim(c.ciudad + ', ' + c.estado + ' ' + c.cp)) as ciudadestadocp,
+	convert(varchar(10), a.fechaelaboracion, 103) as fechaelaboracion from gixamortizacion a
+	join cliente c on a.fkcliente = c.codigo
+	where a.pkamortizacion = {amortizacion}
+	"""
+
+	for x in ses.execute(query):
+		nombre = x.nombre
+		domicilio = x.domicilio
+		if  x.colonia:
+			domicilio+= f" Col. {x.colonia}"
+		telefono = x.telefono
+		ciudadestadocp = x.ciudadestadocp
+		de, m, ae = str(x.fechaelaboracion.split("/"))
+		mes = mes[int(m)]
+
+	
+	template = """
+	<html>
+	<head>
+	<meta name="pdfkit-page-size" content="Legal"/>
+	<meta name="pdfkit-orientation" content="Landscape"/>
+	<meta charset="utf-8">
+	</head>
+	<body>
+	<div style="text-align: center;"><big><big><big><big><span
+	style="font-family: Arial; font-weight: bold;"><br>
+	PAGARE</span></big></big></big></big><br>
+	<div style="text-align: left;"><br>
+	<br>
+	<br>
+	<big><big><big><span style="font-family: Arial;">IMPORTE: <span
+	style="font-weight: bold;">${$TOTALTABLAC}</span></span></big></big></big><br>
+	<br>
+	<br>
+	<div style="text-align: justify;"><big><big><span
+	style="font-family: Arial;">Por
+	medio de este pagar� reconozco(emos) deber y me(nos) obligo(amos) a
+	pagar incondicionalmente a la orden de Arcadia Promotora S. de R.L. de
+	C.V., la cantidad total de <span style="font-weight: bold;">${$TOTALTABLAC}
+	({$TOTALTABLAL})</span>, en el domicilio de Av. Hidalgo 1443 Piso 9,
+	mediante <span style="font-weight: bold;">{$PLAZOTABLA}</span> pagos
+	mensuales consecutivos sin intereses del d�a <span
+	style="font-weight: bold;">{$FECHAINICIAL}</span><span
+	style="font-weight: bold;"></span><span style="font-weight: bold;"></span>
+	al <span style="font-weight: bold;">{$FECHAFINAL}</span><span
+	style="font-weight: bold;"></span><span style="font-weight: bold;"></span>,
+	cada una por la cantidad de <span style="font-weight: bold;">${$PAGOFIJOC}
+	({$PAGOFIJOL})</span>.</span><br>
+	<br>
+	<span style="font-family: Arial;">En caso de mora en el principal, la
+	suma de que se trate causar� intereses moratorios del 
+	25 por ciento anual.<br>
+	<br>
+	<span style="font-family: Arial;">La falta de pago oportuno del capital
+	de por los menos dos mensualidades, traer� como consecuencia que sea
+	exigible en su totalidad el saldo insoluto de la cantidad que ampara el
+	presente pagar�, a�n cuando las mensualidades que sucedan a dicha
+	mensualidad, no se encuentren vencidas.<br>
+	<br>
+	Este pagar� queda relevado de protesto.<br>
+	<br>
+	Para todo lo relacionado con este pagar�, incluyendo su interpretaci�n
+	y cumplimiento, me someto expresamente a las leyes y tribunales
+	vigentes y competentes en la ciudad de Guadalajara, Jalisco,
+	renunciando al fuero que por cualquier otra causa pudiera corresponder.<br>
+	<br>
+	Suscribo el presente pagar� en la ciudad de Guadalajara, Jalisco a los <span
+	style="font-weight: bold;">{$DIA} d�as del mes de {$MES} del {$ANIO}.</span><br>
+	<br>
+	<br>
+	<small>Nombre del Suscriptor:</small><br>
+	<span style="font-weight: bold;">{$NOMBRE}<small><br>
+	</small></span><small>Domicilio:</small><br>
+	<span style="font-weight: bold;">{$DOMICILIO}</span><br>
+	<small>Tel�fono:</small><br>
+	<span style="font-weight: bold;">{$TELEFONO}</span><br>
+	<small>Ciudad y Estado:</small><br>
+	<span style="font-weight: bold;">{$CDEDO}</span></span></span></big></big><br>
+	<div style="text-align: center;">
+	<div style="text-align: left;"><big><big><span
+	style="font-family: Arial;"><span style="font-family: Arial;"></span></span></big></big><br>
+	<br>
+	<br>
+	<br>
+	<br>
+	<br>
+	<div style="text-align: left;"><big><big><span
+	style="font-family: Arial;">ACEPTO(AMOS)</span></big></big>______________________________________________________________________<br>
+	</div>
+	</div>
+	<big><big><span style="font-family: Arial;"><span
+	style="font-family: Arial;"></span></span></big></big></div>
+	</div>
+	</div>
+	</div>
+	</body>
+	</html>
+	"""
+		
+	#h = ((h.replace('{$TOTALTABLAC}',totaltablac)).replace('{$TOTALTABLAL}',totaltablal)).replace('{$PLAZOTABLA}',str(plazotabla))
+	#h = (h.replace('{$FECHAINICIAL}',fechainicial)).replace('{$FECHAFINAL}',fechafinal)
+	#h = (h.replace('{$PAGOFIJOC}',pagofijoc)).replace('{$PAGOFIJOL}',pagofijol)
+	#h = ((h.replace('{$DIA}',de)).replace('{$MES}',me)).replace('{$ANIO}',ae)
+	#h = (h.replace('{$NOMBRE}',nombre)).replace('{$DOMICILIO}',domicilio)
+	#h = (h.replace('{$TELEFONO}',telefono)).replace('{$CDEDO}',ciudadestadocp)
+
+	#jump = '<style>@media print {h1 {page-break-before:always}}</style>'
+	
+	return template
 
 @view_config(route_name="otroprint", renderer="json", request_method="GET")
 def otroprint(request):
@@ -14884,6 +15066,9 @@ def otroprint(request):
 	template=""
 	if tipo=="contrato" and cuenta != None:
 		template=contrato_template(cuenta)
+	if tipo=="pagare" and cuenta !=None:
+		template=pagare_template(cuenta)
+
 	pdfkit.from_string(template, "out.pdf")
 	response = FileResponse("out.pdf", request=request, content_type="application/pdf")
 	return response
