@@ -15271,7 +15271,7 @@ def lotespinares(request):
 	)
 	resultado = []
 	for x in DBSession2.execute(sql):
-		manzana = dec_enc(x.manzana)
+		manzana = x.manzana
 		idval = "{}{}".format(manzana, x.lote)
 		resultado.append(
 			dict(
