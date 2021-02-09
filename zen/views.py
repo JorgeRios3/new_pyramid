@@ -15270,7 +15270,7 @@ def lotespinares(request):
 		etapa
 	)
 	resultado = []
-	for x in DBSession2.execute(preparaQuery(sql)):
+	for x in DBSession2.execute((sql):
 		manzana = dec_enc(x.manzana)
 		idval = "{}{}".format(manzana, x.lote)
 		resultado.append(
