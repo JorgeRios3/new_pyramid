@@ -15280,7 +15280,7 @@ def lotespinares(request):
 				lote=x.lote.strip(),
 				etapa=x.etapa,
 				estatus=x.estatus,
-				preciopormetro=x.preciopormetro,
+				preciopormetro=float(f"{x.preciopormetro}"),
 			)
 		)
 	DBSession2.close()
