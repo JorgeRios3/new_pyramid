@@ -14528,7 +14528,6 @@ def contrato_template(cuenta):
 	template = f"""<html>
 		<head>
 			<meta name="pdfkit-page-size" content="Legal"/>
-			<meta name="pdfkit-orientation" content="Landscape"/>
 			<meta charset="utf-8">
 		</head>
 		<body>
@@ -14947,7 +14946,7 @@ def GetHtmlPagarePagos(amortizacion):
 	pagofijol = aletras(pagofijo, tipo="pesos")
 
 	query = f"""
-	select c.nombre as nombre, c.domicilio as domicilio, c.colonia, as colonia,
+	select c.nombre as nombre, c.domicilio as domicilio, c.colonia as colonia,
 	c.telefonocasa as telcasa, ltrim(rtrim(c.ciudad + ', ' + c.estado + ' ' + c.cp)) as ciudadestadocp,
 	convert(varchar(10), a.fechaelaboracion, 103) as fechaelaboracion from gixamortizacion a
 	join cliente c on a.fkcliente = c.codigo
@@ -14959,17 +14958,16 @@ def GetHtmlPagarePagos(amortizacion):
 		domicilio = x.domicilio
 		if  x.colonia:
 			domicilio+= f" Col. {x.colonia}"
-		telefono = x.telefono
+		telefono = x.telcasa
 		ciudadestadocp = x.ciudadestadocp
-		de, m, ae = str(x.fechaelaboracion.split("/"))
-		mes = mes[int(m)]
+		de, me, ae = x.fechaelaboracion.split("/")
+		mes = mes[int(me)]
 
 	
-	template = """
+	template = f"""
 	<html>
 	<head>
 	<meta name="pdfkit-page-size" content="Legal"/>
-	<meta name="pdfkit-orientation" content="Landscape"/>
 	<meta charset="utf-8">
 	</head>
 	<body>
@@ -14980,53 +14978,53 @@ def GetHtmlPagarePagos(amortizacion):
 	<br>
 	<br>
 	<big><big><big><span style="font-family: Arial;">IMPORTE: <span
-	style="font-weight: bold;">${$TOTALTABLAC}</span></span></big></big></big><br>
+	style="font-weight: bold;">${totaltablac}</span></span></big></big></big><br>
 	<br>
 	<br>
 	<div style="text-align: justify;"><big><big><span
 	style="font-family: Arial;">Por
-	medio de este pagar� reconozco(emos) deber y me(nos) obligo(amos) a
+	medio de este pagaré reconozco(emos) deber y me(nos) obligo(amos) a
 	pagar incondicionalmente a la orden de Arcadia Promotora S. de R.L. de
-	C.V., la cantidad total de <span style="font-weight: bold;">${$TOTALTABLAC}
-	({$TOTALTABLAL})</span>, en el domicilio de Av. Hidalgo 1443 Piso 9,
-	mediante <span style="font-weight: bold;">{$PLAZOTABLA}</span> pagos
-	mensuales consecutivos sin intereses del d�a <span
-	style="font-weight: bold;">{$FECHAINICIAL}</span><span
+	C.V., la cantidad total de <span style="font-weight: bold;">${totaltablac}
+	({totaltablal})</span>, en el domicilio de Av. Hidalgo 1443 Piso 9,
+	mediante <span style="font-weight: bold;">{plazotabla}</span> pagos
+	mensuales consecutivos sin intereses del día <span
+	style="font-weight: bold;">{fechainicial}</span><span
 	style="font-weight: bold;"></span><span style="font-weight: bold;"></span>
-	al <span style="font-weight: bold;">{$FECHAFINAL}</span><span
+	al <span style="font-weight: bold;">{fechafinal}</span><span
 	style="font-weight: bold;"></span><span style="font-weight: bold;"></span>,
-	cada una por la cantidad de <span style="font-weight: bold;">${$PAGOFIJOC}
-	({$PAGOFIJOL})</span>.</span><br>
+	cada una por la cantidad de <span style="font-weight: bold;">${pagofijoc}
+	({pagofijol})</span>.</span><br>
 	<br>
 	<span style="font-family: Arial;">En caso de mora en el principal, la
-	suma de que se trate causar� intereses moratorios del 
+	suma de que se trate causará intereses moratorios del 
 	25 por ciento anual.<br>
 	<br>
 	<span style="font-family: Arial;">La falta de pago oportuno del capital
-	de por los menos dos mensualidades, traer� como consecuencia que sea
+	de por los menos dos mensualidades, traerá como consecuencia que sea
 	exigible en su totalidad el saldo insoluto de la cantidad que ampara el
-	presente pagar�, a�n cuando las mensualidades que sucedan a dicha
+	presente pagaré, aún cuando las mensualidades que sucedan a dicha
 	mensualidad, no se encuentren vencidas.<br>
 	<br>
-	Este pagar� queda relevado de protesto.<br>
+	Este pagaré queda relevado de protesto.<br>
 	<br>
-	Para todo lo relacionado con este pagar�, incluyendo su interpretaci�n
+	Para todo lo relacionado con este pagaré, incluyendo su interpretación
 	y cumplimiento, me someto expresamente a las leyes y tribunales
 	vigentes y competentes en la ciudad de Guadalajara, Jalisco,
 	renunciando al fuero que por cualquier otra causa pudiera corresponder.<br>
 	<br>
-	Suscribo el presente pagar� en la ciudad de Guadalajara, Jalisco a los <span
-	style="font-weight: bold;">{$DIA} d�as del mes de {$MES} del {$ANIO}.</span><br>
+	Suscribo el presente pagaré en la ciudad de Guadalajara, Jalisco a los <span
+	style="font-weight: bold;">{de} días del mes de {me} del {ae}.</span><br>
 	<br>
 	<br>
 	<small>Nombre del Suscriptor:</small><br>
-	<span style="font-weight: bold;">{$NOMBRE}<small><br>
+	<span style="font-weight: bold;">{nombre}<small><br>
 	</small></span><small>Domicilio:</small><br>
-	<span style="font-weight: bold;">{$DOMICILIO}</span><br>
-	<small>Tel�fono:</small><br>
-	<span style="font-weight: bold;">{$TELEFONO}</span><br>
+	<span style="font-weight: bold;">{domicilio}</span><br>
+	<small>Teléfono:</small><br>
+	<span style="font-weight: bold;">{telefono}</span><br>
 	<small>Ciudad y Estado:</small><br>
-	<span style="font-weight: bold;">{$CDEDO}</span></span></span></big></big><br>
+	<span style="font-weight: bold;">{ciudadestadocp}</span></span></span></big></big><br>
 	<div style="text-align: center;">
 	<div style="text-align: left;"><big><big><span
 	style="font-family: Arial;"><span style="font-family: Arial;"></span></span></big></big><br>
