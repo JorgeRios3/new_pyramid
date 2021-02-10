@@ -12221,7 +12221,7 @@ class LotesIndividualesArcadiaRest(QueryAndErrors, EAuth):
 					dict(
 						id=x.inmueble,
 						manzana=x.manzana,
-						lote=x.lote),
+						lote=x.lote,
 						preciopormetro=float(f"{x.preciopormetro}"),
 						inmueble=x.inmueble,
 						superficie=x.superficie,
