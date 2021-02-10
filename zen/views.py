@@ -14888,8 +14888,191 @@ def pagare_template(cuenta):
 	else:
 		return GetHtmlPagarePagos(amortizacion)
 
-def GetHtmlPagarePagosExtras():
-	return ""
+def GetHtmlPagarePagosExtras(amortizacion):
+	ses = DBSession2
+	mes = {1:"Enero", 2:"Febrero", 3:"Marzo", 4:"Abril", 5:"Mayo", 6:"Junio", 7:"Julio",
+		       8:"Agosto", 9:"Septiembre", 10:"Octubre", 11:"Noviembre", 12:"Diciembre"}
+	messmall = {1:"Ene", 2:"Feb", 3:"Mar", 4:"Abr", 5:"May", 6:"Jun", 7:"Jul",
+				8:"Ago", 9:"Sep", 10:"Oct", 11:"Nov", 12:"Dic"}
+		
+	query =f"""
+		select sum(pagofijo) as total from gixamortizaciondetalle where fkamortizacion = {amortizacion} and eliminado = 0
+		"""
+	for x in ses.execute(query):
+		totaltabla = x.total
+	
+	query = f"""
+		select count(*) as cuantos from gixamortizaciondetalle
+		where fkamortizacion = {amortizacion} and eliminado = 0
+		"""
+	for x in ses.execute(query):
+		plazotabla=x.cuantos
+
+	totaltablac = formato_comas.format(float(totaltabla))
+	totaltablal = aletras(float(totaltabla), tipo="pesos")
+
+	query = f"""
+	select c.nombre as nombre, c.domicilio as domicilio, c.colonia as colonia,
+	c.telefonocasa as telcasa, ltrim(rtrim(c.ciudad + ', ' + c.estado + ' ' + c.cp)) as ciudadestadocp,
+	convert(varchar(10), a.fechaelaboracion, 103) as fechaelaboracion from gixamortizacion a
+	join cliente c on a.fkcliente = c.codigo
+	where a.pkamortizacion = {amortizacion}
+	"""
+
+	for x in ses.execute(query):
+		nombre = x.nombre
+		domicilio = x.domicilio
+		if  x.colonia:
+			domicilio+= f" Col. {x.colonia}"
+		telefono = x.telcasa
+		ciudadestadocp = x.ciudadestadocp
+		de, me, ae = x.fechaelaboracion.split("/")
+		mes = mes[int(me)]
+	
+	rows =[]
+	query = f"""
+		select numerodepago as numerodepago, convert(varchar(10), fechadepago, 103) as fechadepago, pagofijo as pagofijo
+		from gixamortizaciondetalle
+		where fkamortizacion = {amortizacion} and eliminado = 0 order by numerodepago
+		"""
+	for x in ses.execute(query):
+		rows.append(dict(numerodepago=x.numerodepago, fechadepago=x.fechadepago, pagofijo=x.pagofijo))
+	
+	template = f"""
+	<html>
+	<head>
+	<meta name="pdfkit-page-size" content="Legal"/>
+	<meta charset="utf-8">
+	</head>
+	<body>
+	<div style="text-align: center;"><big><big><big><big><span
+	style="font-family: Arial; font-weight: bold;"><br>
+	PAGARE</span></big></big></big></big><br>
+	<div style="text-align: left;"><br>
+	<br>
+	<br>
+	<big><big><big><span style="font-family: Arial;">IMPORTE: <span
+	style="font-weight: bold;">${totaltablac}</span></span></big></big></big><br>
+	<br>
+	<br>
+	<div style="text-align: justify;"><big><big><span
+	style="font-family: Arial;">Por
+	medio de este pagar� reconozco(emos) deber y me(nos) obligo(amos) a
+	pagar incondicionalmente a la orden de Arcadia Promotora S. de R.L. de
+	C.V., la cantidad total de <span style="font-weight: bold;">${totaltablac}
+	({totaltablal})</span>, en el domicilio de Av. Hidalgo 1443 Piso 9,
+	mediante <span style="font-weight: bold;">{plazotabla}</span> pagos
+	de la siguiente forma:<span style="font-weight: bold;"></span><span
+	style="font-weight: bold;"></span><span style="font-weight: bold;"></span><span
+	style="font-weight: bold;"></span><span style="font-weight: bold;"></span><span
+	style="font-weight: bold;"></span><span style="font-weight: bold;"></span></span><br>
+	<br>
+	"""
+	
+	tableheader = f"""<table>
+	<thead>
+					<tr>
+					<th scope="col">No. de Pago</th>
+					<th scope="col">Fecha de Pago</th>
+					<th scope="col">Saldo Inicial</th>
+					<th scope="col">Pago</th>
+					<th scope="col">Saldo Final</th>
+					</tr>
+				</thead><tbody>"""
+	template += tableheader
+	lines = 18
+	sini = float(totaltabla)
+	for row in rows:
+		numerodepago = str(int(row["numerodepago"]))
+		d, m, a = row["fechadepago"].split("/")
+		fechadepago = "%02d/%s/%04d" % (int(d), messmall[int(m)], int(a))
+		saldoinicial = formato_comas.format(sini)
+		pagofijo = formato_comas.format(float(row["pagofijo"]))
+		sfin = sini - float(row["pagofijo"])
+		if sfin < 0:
+			sfin = 0.00
+		saldofinal = formato_comas.format(float(sfin))
+		sini = sfin
+		tag = ''
+		#lines += 1
+		#if lines > 27:
+			#tag = '<div><h1></div><br><br><br><br><br><br><br><br><br><br>'
+			#lines = 0
+			
+		template+= f"""
+				<tr>
+					<td style="width: 100px; height: 10px; text-align: center;"><small>{numerodepago}</small></td>
+					<td style="width: 165px; height: 10px; text-align: center;"><small>{fechadepago}</small></td>
+					<td style="width: 140px; height: 10px; text-align: center;"><small>{saldoinicial}</small></td>
+					<td style="width: 100px; height: 10px; text-align: center;"><small>{pagofijo}</small></td>
+					<td style="width: 110px; height: 10px; text-align: center;"><small>{saldofinal}</small></td>
+				</tr>
+				"""
+		#template += line + tag
+		#if tag:
+		#	template += tableheader
+	template+= f"""</tbody></table>"""
+	
+	h2 = f"""
+	<br>
+	<span style="font-family: Arial;">En caso de mora en el principal, la
+	suma de que se trate causará intereses moratorios por todo el tiempo que se mantenga insoluto dicho pago a una tasa del 25 % anual.<br>
+	<br>
+	<span style="font-family: Arial;">La falta de pago oportuno del capital
+	de por los menos dos mensualidades, traerá como consecuencia que sea
+	exigible en su totalidad el saldo insoluto de la cantidad que ampara el
+	presente pagaré, aún cuando las mensualidades que sucedan a dicha
+	mensualidad, no se encuentren vencidas.<br>
+	<br>
+	Este pagaré queda relevado de protesto.<br>
+	<br>
+	Para todo lo relacionado con este pagaré, incluyendo su interpretación
+	y cumplimiento, me someto expresamente a las leyes y tribunales
+	vigentes y competentes en la ciudad de Guadalajara, Jalisco,
+	renunciando al fuero que por cualquier otra causa pudiera corresponder.<br>
+	<br>
+	Suscribo el presente pagaré en la ciudad de Guadalajara, Jalisco a los <span
+	style="font-weight: bold;">{de} d�as del mes de {me} del {ae}.</span><br>
+	<br>
+	<br>
+	<small>Nombre del Suscriptor:</small><br>
+	<span style="font-weight: bold;">{nombre}<small><br>
+	</small></span><small>Domicilio:</small><br>
+	<span style="font-weight: bold;">{domicilio}</span><br>
+	<small>Tel�fono:</small><br>
+	<span style="font-weight: bold;">{telefono}</span><br>
+	<small>Ciudad y Estado:</small><br>
+	<span style="font-weight: bold;">{ciudadestadocp}</span></span></span></big></big><br>
+	<div style="text-align: center;">
+	<div style="text-align: left;"><big><big><span
+	style="font-family: Arial;"><span style="font-family: Arial;"></span></span></big></big><br>
+	<br>
+	<br>
+	<br>
+	<br>
+	<br>
+	<div style="text-align: left;"><big><big><span
+	style="font-family: Arial;">ACEPTO(AMOS)</span></big></big>______________________________________________________________________<br>
+	</div>
+	</div>
+	<big><big><span style="font-family: Arial;"><span
+	style="font-family: Arial;"></span></span></big></big></div>
+	</div>
+	</div>
+	</div>
+	</body>
+	</html>
+	"""
+		 
+	template = template + h2
+	# h = (h.replace('\n',' ')).replace('\t',' ')
+	# h = (h.replace('{$TOTALTABLAC}',totaltablac)).replace('{$TOTALTABLAL}',totaltablal)
+	# h = h.replace('{$PLAZOTABLA}',str(plazotabla))
+	# h = ((h.replace('{$DIA}',de)).replace('{$MES}',me)).replace('{$ANIO}',ae)
+	# h = (h.replace('{$NOMBRE}',nombre)).replace('{$DOMICILIO}',domicilio)
+	# h = (h.replace('{$TELEFONO}',telefono)).replace('{$CDEDO}',ciudadestadocp)
+	
+	return template
 
 def GetHtmlPagarePagos(amortizacion):
 	#cuenta en 2
