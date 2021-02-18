@@ -32,6 +32,7 @@ def main(global_config, **settings):
     config.add_static_view("app", "app", cache_max_age=3600)
     config.add_static_view("assets", "assets", cache_max_age=3600)
     config.add_static_view("fonts", "fonts", cache_max_age=3600)
+    config.add_static_view("static", "static", cache_max_age=3600)
     config.add_route("raiz", "/")
     config.add_route("zeniclar", "/zeniclar/")
     config.add_view(raiz, route_name="raiz")

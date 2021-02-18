@@ -74,6 +74,7 @@ from PyPDF2 import PdfFileReader
 import pdfkit
 import os
 
+
 # c2p=CantidadAPalabras
 
 redis_host, redis_port, redis_db = "10.0.1.124", 6379, 5
@@ -14213,6 +14214,8 @@ def amount_and_cents_with_commas(v, name="(Unknown name)", md={}):
 	return thousands_commas(v)
 
 def contrato_template(cuenta):
+	path = os.getcwd()
+	src_image=f"{path}/zen/static/logopinares.jpg"
 	contrato = "contrato"
 	razonsocial = "razon soc"
 	representantelegal = "replec"
@@ -14627,6 +14630,18 @@ def contrato_template(cuenta):
 			<meta charset="utf-8">
 		</head>
 		<body>
+		<table style="width:100%">
+			<tbody>
+				<tr style="width:100%">
+					<td style="width:50%;">
+					<img style="width:283px; height:259px;" src='{src_image}' />
+					</td>
+					<td style="text-align: right; width:50%;">
+					</td>
+				</tr>
+			</tbody>
+		</table>
+
 		<div style="text-align: right;">
 			NUMERO&nbsp; {general["contrato"]} A<br>
 			</div>
@@ -14802,7 +14817,7 @@ def contrato_template(cuenta):
 			la restitución de la posesión dentro del plazo convenido, pagará(n) a
 			"LA PROMITENTE VENDEDORA" por concepto de pena convencional una
 			cantidad equivalente a 9 veces el salario mínimo vigente en esta
-			ciudad de Guadalajara, Jalisco, por cada día de retraso en la entrega de dicha posesión.<br><br><br><br>
+			ciudad de Guadalajara, Jalisco, por cada día de retraso en la entrega de dicha posesión.<br><br>
 			</div>
 			
 
@@ -14816,7 +14831,7 @@ def contrato_template(cuenta):
 			parte de "EL(LOS) PROMITENTE(S) COMPRADOR(ES)", "LA PROMITENTE
 			VENDEDORA" podrá optar por rescindir el presente contrato sin necesidad
 			de declaración judicial previa, mediante simple notificación hecha por
-			escrito.<br><br><br><br>
+			escrito.<br><br>
 			</div>
 			
 
@@ -14828,7 +14843,7 @@ def contrato_template(cuenta):
 			VENDEDORA" y además se obliga(n) a pagarle a esta, una cantidad
 			equivalente al 5{sabe2} sobre el valor total de la correspondiente cesión de
 			derechos. Sin el consentimiento expreso por escrito de "LA PROMITENTE
-			VENDEDORA", la cesión de derechos no surtirá efecto legal alguno.<br><br><br><br>
+			VENDEDORA", la cesión de derechos no surtirá efecto legal alguno.<br><br>
 			</div>
 
 			<div style="text-align:justify;><span style="font-weight: bold;">NOVENA.- IMPUESTOS PREDIAL DE "EL INMUEBLE".<br></div>
@@ -14836,7 +14851,7 @@ def contrato_template(cuenta):
 			<div style="text-align: justify;">"EL(LOS) PROMITENTE(S)
 			COMPRADOR(ES)" se obliga(n) a pagar a partir de esta fecha el impuesto
 			predial correspondiente a "EL INMUEBLE" y "LA PROMITENTE VENDEDORA" se obliga a entregar al
-			corriente el saldo del impuesto.<br><br><br><br>
+			corriente el saldo del impuesto.<br><br>
 			</div>
 			
 			<div style="text-align:justify;><span style="font-weight: bold;">DECIMA.- CONSTRUCCION DE "EL INMUEBLE".<br></div>
@@ -14848,7 +14863,7 @@ def contrato_template(cuenta):
 			así como las limitaciones que señala el
 			reglamento del Desarrollo,
 			respecto a la construcción que edifiquen sobre "EL INMUEBLE" misma que
-			deberá ser recreativa campestres.<br><br><br><br><br><br>
+			deberá ser recreativa campestres.<br><br>
 			</div>
 
 			<div style="text-align:justify;><span style="font-weight: bold;">DECIMO PRIMERA.- REGIMEN DE PROPIEDAD EN CONDOMINIO.<br></div>
@@ -14874,7 +14889,7 @@ def contrato_template(cuenta):
 			ocasionados por el presente contrato, así como los gastos, impuestos,
 			derechos y honorarios ocasionados por la escritura de compra venta
 			definitiva serán a cargo de "EL(LOS) PROMITENTE(S) COMPRADOR(ES)". El
-			impuesto sobre la renta será pagado por "LA PROMITENTE VENDEDORA".<br><br><br>
+			impuesto sobre la renta será pagado por "LA PROMITENTE VENDEDORA".<br><br>
 			</div>
 
 			<div style="text-align:justify;><span style="font-weight: bold;">DECIMA TERCERA.- TRIBUNALES COMPETENTES<br></div>
@@ -14883,7 +14898,7 @@ def contrato_template(cuenta):
 			interpretación y cumplimiento del presente contrato "LAS PARTES" se
 			someten expresamente a los Tribunales de esta ciudad de Guadalajara,
 			Jalisco, renunciando al fuero presente o futuro que por cualquier causa
-			pudiere corresponderles.<br><br><br><br><br>
+			pudiere corresponderles.<br><br>
 			</div>
 
 			<div style="text-align:justify;><span style="font-weight: bold;">DECIMA CUARTA.- DEPOSITARIO DE "EL INMUEBLE".<br></div>
@@ -14904,9 +14919,8 @@ def contrato_template(cuenta):
 			la empresa ubicadas en {edomicilio}, o en las que designe con
 			posterioridad, mediante aviso dado por escrito a "EL(LOS) PROMITENTE(S)
 			COMPRADOR(ES)". El cambio de domicilio, los emplazamientos y demás diligencias judiciales o extrajudiciales
-			, se practicarán en el domicilio señalado en la presente cláusula<br><br><br><br><br>
+			, se practicarán en el domicilio señalado en la presente cláusula<br><br>
 			</div>
-			<br>
 			
 
 			<div style="text-align:justify;><span style="font-weight: bold;">DECIMA QUINTA.- <br></div>
@@ -15144,9 +15158,6 @@ def GetHtmlPagarePagosExtras(amortizacion):
 	style="font-family: Arial;"><span style="font-family: Arial;"></span></span></big></big><br>
 	<br>
 	<br>
-	<br>
-	<br>
-	<br>
 	<div style="text-align: left;"><big><big><span
 	style="font-family: Arial;">ACEPTO(AMOS)</span></big></big>______________________________________________________________________<br>
 	</div>
@@ -15250,15 +15261,13 @@ def GetHtmlPagarePagos(amortizacion):
 	<meta charset="utf-8">
 	</head>
 	<body>
-	<div style="text-align: center;"><big><big><big><big><span
+	<div style="text-align: center;"><big><big><big><span
 	style="font-family: Arial; font-weight: bold;"><br>
-	PAGARE</span></big></big></big></big><br>
+	PAGARE</span></big></big></big><br>
 	<div style="text-align: left;"><br>
 	<br>
-	<br>
-	<big><big><big><span style="font-family: Arial;">IMPORTE: <span
-	style="font-weight: bold;">${totaltablac}</span></span></big></big></big><br>
-	<br>
+	<big><big><span style="font-family: Arial;">IMPORTE: <span
+	style="font-weight: bold;">${totaltablac}</span></span></big></big><br>
 	<br>
 	<div style="text-align: justify;"><big><big><span
 	style="font-family: Arial;">Por
@@ -15309,9 +15318,6 @@ def GetHtmlPagarePagos(amortizacion):
 	style="font-family: Arial;"><span style="font-family: Arial;"></span></span></big></big><br>
 	<br>
 	<br>
-	<br>
-	<br>
-	<br>
 	<div style="text-align: left;"><big><big><span
 	style="font-family: Arial;">ACEPTO(AMOS)</span></big></big>______________________________________________________________________<br>
 	</div>
@@ -15337,6 +15343,9 @@ def GetHtmlPagarePagos(amortizacion):
 	return template
 
 def tablatemplate(cuenta):
+	path = os.getcwd()
+	src_image=f"{path}/zen/static/logopinares.jpg"
+
 	ses = DBSession2
 	plazo = None
 	amortizacion = None
@@ -15386,39 +15395,50 @@ def tablatemplate(cuenta):
 	saldoafinanciar = formato_comas.format(saldoafinanciar)
 	preciom2 = formato_comas.format(preciom2)
 	
-	#a = u"�"; e = u"�"; i = u"�"; o = u"�"; u = u"�"
 	meses = ("", "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic")
-	# lote = self.GetString(row[0]); enganche = str(amount_and_cents_with_commas(float(row[1])))
-	# superficie = str(amount_and_cents_with_commas(float(row[2])))
-	# saldoafinanciar = str(amount_and_cents_with_commas(float(row[3])))
-	# preciom2 = str(amount_and_cents_with_commas(float(row[4])))
-	# if abonointeres:
-	# 	totalapagar = str(amount_and_cents_with_commas(abonointeres + float(row[1])))
-	# else:
-	# 	totalapagar = str(amount_and_cents_with_commas(float(row[5])))
-		
-	# cuenta = int(row[6])
-	#if cuenta:
-		#return "", cuenta
-	
-	template = f"""
-	<html>
-	<head>
-	<meta name="pdfkit-page-size" content="letter"/>
-	<meta charset="utf-8">
-	</head>
-	<body>"""
 	
 	t = datetime.now()
 	z = t.time()
 	fecha = "{:04d}/{:02d}/{:02d}".format(t.year, t.month, t.day)
-	hora = "{:02d}:{:02d}:{:02d}".format(z.hour, z.minute, z.second) 
+	hora = "{:02d}:{:02d}:{:02d}".format(z.hour, z.minute, z.second)
+
+	css=""" body {
+        font-family: 'Tangerine', serif;
+        font-size: 48px;
+      }"""
+	
+	template = f"""
+	<html>
+	<head>
+	<meta name="pdfkit-page-size" content="Letter"/>
+	<meta charset="utf-8">
+	<meta name="enable-local-file-access" content="true"/>
+	<link rel="stylesheet"
+          href="https://fonts.googleapis.com/css?family=Open+Sans">
+	<style>
+	{css}
+    </style>
+	</head>
+	<body>
+	<table style="width:100%">
+		<tbody>
+			<tr style="width:100%">
+				<td style="width:50%;">
+				 <img style="width:315px; height:288px;" src='{src_image}' />
+				</td>
+				<td style="text-align: right; width:50%;">
+					<big><big
+					style="font-weight: bold;">Id de la Tabla:&nbsp; {amortizacion} 
+					</big></big>
+					<br> {fecha} &nbsp; {hora} </span><br>
+				</td>
+			</tr>
+		</tbody>
+	</table>
+	"""
+	
 	template += f"""
 	<div style="text-align: right;">
-		<big><big
-		style="font-weight: bold;">Id de la Tabla:&nbsp; {amortizacion} 
-		</big></big>
-		<br> {fecha} &nbsp; {hora} </span><br>
 	</div>
 	<hr style="width: 100%; height: 2px;">
 	<table style="text-align: left; width: 985px; height: 82px; margin-left: auto; margin-right: auto;"
@@ -15465,13 +15485,13 @@ def tablatemplate(cuenta):
 	lines, page, pages = 0, 1, 1
 	template += """
 	<div style="width:100%">
-	<table class="table">
+	<table class="table" style="width:100%">
 	<thead>
-    <tr>
+    <tr style="width:100%">
       <th scope="col">No. de Pago</th>
       <th scope="col">Fecha de Pago</th>
       <th scope="col">Saldo Inicial</th>
-      <th scope="col">Pago</th>
+      <th scope="col" style="padding-left:40px;">Pago</th>
 	  <th scope="col">Abono a Capital</th>
       <th scope="col">Intereses</th>
       <th scope="col">Saldo Final</th>
@@ -15502,13 +15522,13 @@ def tablatemplate(cuenta):
 			page += 1
 			
 		line = """
-			<tr>
-				<td style="width: 50px; height: 10px; text-align: right;">""" + numerodepago + """</td>
-				<td style="width: 140px; height: 10px; text-align: right;">""" + fechadepago + """</td>
+			<tr style="width:100%">
+				<td style="width: 50px; height: 10px; text-align: center;">""" + numerodepago + """</td>
+				<td style="width: 140px; height: 10px; text-align: center;">""" + fechadepago + """</td>
 				<td style="width: 110px; height: 10px; text-align: right;">""" + saldoinicial + """</td>
-				<td style="width: 80px; height: 10px; text-align: right;">""" + pagofijo + """</td>
-				<td style="width: 100px; height: 10px; text-align: right;">""" + abonocapital + """</td>
-				<td style="width: 100px; height: 10px; text-align: right;">""" + interes + """</td>
+				<td style="width: 80px; height: 10px; text-align: right; padding-left:40px;">""" + pagofijo + """</td>
+				<td style="width: 100px; height: 10px; text-align: center;">""" + abonocapital + """</td>
+				<td style="width: 100px; height: 10px; text-align: center;">""" + interes + """</td>
 				<td style="width: 100px; height: 10px; text-align: right;">""" + saldofinal + """</td>
 			</tr>
 		"""
@@ -15535,7 +15555,7 @@ def otroprint(request):
 	if tipo=="tabla" and cuenta !=None:
 		template=tablatemplate(cuenta)
 
-	pdfkit.from_string(template, "out.pdf")
+	pdfkit.from_string(template, "out.pdf", {'page-size': 'Letter', 'encoding': "UTF-8", 'enable-local-file-access':"", "footer-right": '[page] de [topage]', "footer-left": '{} cuenta: {}'.format(tipo, cuenta), "footer-spacing":10, "margin-bottom":"30mm"})
 	response = FileResponse("out.pdf", request=request, content_type="application/pdf")
 	return response
 

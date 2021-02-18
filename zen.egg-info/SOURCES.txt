@@ -150,6 +150,7 @@ zen/report/img/pagocomision/barcode/fe6267f47c704db584418e6de2b3a7cd.jpg
 zen/report/img/pagocomision/barcode/ff45ba1ecf3d45779aab2312390b9606.jpg
 zen/scripts/__init__.py
 zen/scripts/initializedb.py
+zen/static/logopinares.jpg
 zen/static/pyramid-16x16.png
 zen/static/pyramid.png
 zen/static/theme.css
