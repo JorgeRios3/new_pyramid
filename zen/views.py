@@ -14234,6 +14234,7 @@ def contrato_template(cuenta):
 	rfccliente = "rfccliente"
 	totalapagarq = "totalapagarq"
 	totalapagarl = "totalapagarl"
+	acredito = False
 	c2p1 = ""
 	sabe = "%"
 	sabe2 = "%"
@@ -14290,6 +14291,7 @@ def contrato_template(cuenta):
 		rows.append(x)
 
 	if rows:
+		acredito = True
 		print("entro en rows")
 		# if True validacion 0 es igual a credito not self.GetControl(ID_CHOICEAMORFUNC1FORMADEPAGO).GetSelection() == 0:
 		# return "", 0
@@ -14310,6 +14312,8 @@ def contrato_template(cuenta):
 		plazotabla, totaltabla = 0, 0
 		di, mi, ai, df, mf, af = 0, 0, 0, 0, 0, 0
 
+	
+	#todavia no se bien como funciona este query
 	query = f"""
 	select count(*) as cuantos from gixamortizaciondetalle
 	where fkamortizacion = {amortizacion} and eliminado = 0 and insertado <> 0
@@ -14339,7 +14343,7 @@ def contrato_template(cuenta):
 	i.titulo1 as titulo1, i.lindero1 as lindero1, i.titulo2 as titulo2, i.lindero2 as lindero2, i.titulo3 as titulo3, i.lindero3 as lindero3, i.titulo4 as titulo4, i.lindero4 as lindero4,
 	case a.plazomeses when 0 then a.saldoafinanciar else (a.pagomensualfijo * a.plazomeses) end as restoq,
 	a.plazomeses as plazomeses, a.pagomensualfijo as pagomensualfijo, convert(varchar(10), a.fechaelaboracion, 103) as fechaelaboracion, a.fkcliente as cliente, a.fkvendedor as vendedor,
-	a.contrato as contrato, a.cuenta, convert(varchar(10), a.fechaprimerpago, 103), convert(varchar(10), a.fechaenganche, 103)
+	a.contrato as contrato, a.cuenta, convert(varchar(10), a.fechaprimerpago, 103), convert(varchar(10), a.fechaenganche, 103) as fechaenganche
 	from gixamortizacion a
 	join INMUEBLE i on a.fkinmueble = i.codigo
 	where a.pkamortizacion = {amortizacion}
@@ -14370,6 +14374,7 @@ def contrato_template(cuenta):
 			lindero3=x.lindero3,
 			titulo4=x.titulo4,
 			lindero4=x.lindero4,
+			fechaenganche= x.fechaenganche
 		)
 		print("viendo general")
 		print(general)
@@ -14524,10 +14529,101 @@ def contrato_template(cuenta):
 		# </span></div>
 		# """
 		c2p1 += tableheader
+	if acredito:
+		c2p1 = f"""
+				<div style="text-align: justify;"><br>1.- La cantidad de ${engancheq},
+				({enganchel}), manifiesta "LA PROMITENTE VENDEDORA" quien la recibe en
+				este acto a su entera satisfacción, sirviendo el presente contrato de
+				formal recibo por la entrega de dicha cantidad.<br>
+				</div>
+				<div style="text-align: justify;"><br>2.- El resto de la contraprestación o
+				sea la cantidad de ${restoq}, ({restol}) la deberá(n) pagar
+				"EL(LOS) PROMITENTE(S) COMPRADOR(ES)" mediante {plazomeses} amortizaciones
+				mensuales, consecutivas sin intereses del día {di} de
+				{meses[int(mi)]} de {ai} al día {df} de {meses[int(mf)]} de
+				{af}, cada una por la cantidad de ${pagomensualq},
+				({pagomensuall}).<br>
+				</div>
+				<div style="text-align: justify;"><br>3.- Las amortizaciones mensuales a
+				que se refiere el punto anterior, se documentan mediante pagaré(s) que en 
+				este acto suscribe "EL(LOS) PROMITENTE(S)
+				COMPRADOR(ES)" quien(es) esté(n) de acuerdo en que dicho(s) título(s)
+				de crédito sea(n) descontado(s) con terceras personas físicas o morales
+				a elección de "LA PROMITENTE VENDEDORA".<br>
+				</div>
+				<div style="text-align: justify;"><br>4.- En caso de que "EL(LOS)
+				PROMITENTE(S) COMPRADOR(ES)" incurra(n) en mora en el pago de las
+				amortizaciones se causarán intereses moratorios por todo el tiempo que
+				se mantenga insoluto dicho pago a una tasa del 25 % anual.<br>
+				</div>
+				
+				<div style="text-align: justify;">
+				Si "LA PROMITENTE VENDEDORA" incurre
+				en gastos judiciales o extrajudiciales para realizar la cobranza de los
+				pagos vencidos en su caso, "EL(LOS) PROMITENTE(S) COMPRADOR(ES)"
+				estará(n) obligado(s) a reembolsarle éstos gastos a "LA PROMITENTE
+				VENDEDORA".<br><br><br>
+				</div>
+				<div style="text-align:justify;><span style="font-weight: bold;">TERCERA.- INCUMPLIMIENTO.<br></div>
+				<div style="text-align: justify;">La falta de pago puntual de
+				dos de las amortizaciones mensuales, se considerará como incumplimiento
+				por parte de "EL(LOS) PROMITENTE(S) COMPRADOR(ES)" al presente
+				contrato, por lo que "LA PROMITENTE VENDEDORA" tendrá la opción de
+				rescindirlo en los términos que se establecen en la
+				cláusula séptima del mismo.<br>
+				</div>
+				<div style="text-align: justify;"><br>"EL(LOS) PROMITENTE(S)
+				COMPRADOR(ES)", se obliga(n) a contribuir con los gastos generales, que
+				se originen en la conservación y buen funcionamiento de las áreas de
+				uso común, en la proporción que le corresponda, tal como lo establece
+				el reglamento del desarrollo. Dicha obligación la adquiere a partir de
+				la firma del presente documento. La falta de pago puntual de por lo
+				menos dos de los pagos mensuales que anteriormente se detallan, se
+				considerará como incumplimiento por parte de "EL(LOS) PROMITENTE(S)
+				COMPRADOR(ES)", y por lo tanto, "LA PROMITENTE VENDEDORA", tendrá la
+				opción de rescindir el presente contrato en los términos que se
+				establecen en la cláusula séptima de este contrato.<br><br>
+				</div>
+				<div style="text-align:justify;><span style="font-weight: bold;">CUARTA.- PRECIO PACTADO.<br></div>
+				<div style="text-align: justify;">Las partes manifiestan que
+				el precio pactado en esta operación, es justo y válido, por lo tanto en
+				este contrato no existe error, ni enriquecimiento ilegítimo de alguna
+				de las partes.<br>
+				</div>
+				"""
+	else:
+		d, m, a = general["fechaenganche"].split("/")
+		fechaenganche = f"""{int(d)} de {meses[int(m)]} de {int(a)}"""
+		c2p1 = f"""
+				<div><h1></div>
+				<br>
+				<div style="text-align: justify;"><br>1.- La cantidad de ${engancheq},
+				({enganchel}), la deberá pagar "EL(LOS) PROMITENTE(S) COMPRADOR(ES)"
+				mediante un pago único el día {fechaenganche}.<br>
+				</div>
 
+				<div style="text-align: justify;"><br>TERCERA.- "EL(LOS) PROMITENTE(S)
+				COMPRADOR(ES)", se obliga(n) a contribuir con los gastos generales, que
+				se originen en la conservación y buen funcionamiento de las áreas de
+				uso común, en la proporción que le corresponda, tal como lo establece
+				el reglamento del desarrollo. Dicha obligación la adquiere a partir de
+				la firma del presente documento. La falta de pago puntual de por lo
+				menos dos de los pagos mensuales que anteriormente se detallan, se
+				considerará como incumplimiento por parte de "EL(LOS) PROMITENTE(S)
+				COMPRADOR(ES)", y por lo tanto, "LA PROMITENTE VENDEDORA", tendrá la
+				opción de rescindir el presente contrato en los términos que se
+				establecen en la cláusula séptima de este contrato.<br><br>
+				</div>
+
+				<div style="text-align: justify;"><br>CUARTA.- Las partes manifiestan que
+				el precio pactado en esta operación, es justo y válido, por lo tanto en
+				este contrato no existe error, ni enriquecimiento ilegítimo de alguna
+				de las partes.<br>
+				</div>
+				"""
 	template = f"""<html>
 		<head>
-			<meta name="pdfkit-page-size" content="Legal"/>
+			<meta name="pdfkit-page-size" content="letter"/>
 			<meta charset="utf-8">
 		</head>
 		<body>
@@ -14941,7 +15037,7 @@ def GetHtmlPagarePagosExtras(amortizacion):
 	template = f"""
 	<html>
 	<head>
-	<meta name="pdfkit-page-size" content="Legal"/>
+	<meta name="pdfkit-page-size" content="letter"/>
 	<meta charset="utf-8">
 	</head>
 	<body>
@@ -14957,7 +15053,7 @@ def GetHtmlPagarePagosExtras(amortizacion):
 	<br>
 	<div style="text-align: justify;"><big><big><span
 	style="font-family: Arial;">Por
-	medio de este pagar� reconozco(emos) deber y me(nos) obligo(amos) a
+	medio de este pagaré reconozco(emos) deber y me(nos) obligo(amos) a
 	pagar incondicionalmente a la orden de Arcadia Promotora S. de R.L. de
 	C.V., la cantidad total de <span style="font-weight: bold;">${totaltablac}
 	({totaltablal})</span>, en el domicilio de Av. Hidalgo 1443 Piso 9,
@@ -15150,7 +15246,7 @@ def GetHtmlPagarePagos(amortizacion):
 	template = f"""
 	<html>
 	<head>
-	<meta name="pdfkit-page-size" content="Legal"/>
+	<meta name="pdfkit-page-size" content="letter"/>
 	<meta charset="utf-8">
 	</head>
 	<body>
@@ -15240,6 +15336,193 @@ def GetHtmlPagarePagos(amortizacion):
 	
 	return template
 
+def tablatemplate(cuenta):
+	ses = DBSession2
+	plazo = None
+	amortizacion = None
+	pagoextra = False
+	messmall = {1:"Ene", 2:"Feb", 3:"Mar", 4:"Abr", 5:"May", 6:"Jun", 7:"Jul",
+				8:"Ago", 9:"Sep", 10:"Oct", 11:"Nov", 12:"Dic"}
+
+	for x in ses.execute(f"select pkamortizacion as pk from gixamortizacion where cuenta={cuenta}"):
+		amortizacion=x.pk
+
+	query = f"""
+		select sum(abonocapital) + sum(interes) as abonointeres from gixamortizaciondetalle where fkamortizacion = {amortizacion} and eliminado = 0
+		"""
+		#sql = (query.replace('\n',' ')).replace('\t',' ')
+		#cu = r_cngcmex.cursor()
+		#cu.execute(str(sql))
+		#dato = fetchone(cu)
+		#cu.close()
+	abonointeres = 0
+	for x in ses.execute(query):
+		abonointeres = x.abonointeres
+
+	query = f"""
+	select rtrim(ltrim(i.iden2)) + '-' + rtrim(ltrim(i.iden1)) as lote, a.enganchec as enganche, i.superficie as superficie, a.saldoafinanciar as saldoafinanciar, i.preciopormetro as preciom2,
+	case a.plazomeses when 0 then (a.saldoafinanciar + a.enganchec) else ((a.pagomensualfijo * a.plazomeses) + a.enganchec) end as totalapagaraux,
+	a.cuenta
+	from gixamortizacion a
+	join INMUEBLE i on a.fkinmueble = i.codigo
+	where a.pkamortizacion = {amortizacion}
+	"""
+	#pagofijoc = formato_comas.format(pagofijo)
+	#pagofijol = aletras(pagofijo, tipo="pesos")
+	for x in ses.execute(query):
+		lote = x.lote
+		enganche = x.enganche
+		superficie = x.superficie
+		saldoafinanciar = x.saldoafinanciar
+		preciom2 = x.preciom2
+		totalapagaraux=x.totalapagaraux
+	if abonointeres:
+		totalapagar = str(formato_comas.format(abonointeres + enganche))
+	else:
+		totalapagar = str(formato_comas.format(totalapagaraux))
+
+	enganche = formato_comas.format(enganche)
+	superficie = formato_comas.format(superficie)
+	saldoafinanciar = formato_comas.format(saldoafinanciar)
+	preciom2 = formato_comas.format(preciom2)
+	
+	#a = u"�"; e = u"�"; i = u"�"; o = u"�"; u = u"�"
+	meses = ("", "Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic")
+	# lote = self.GetString(row[0]); enganche = str(amount_and_cents_with_commas(float(row[1])))
+	# superficie = str(amount_and_cents_with_commas(float(row[2])))
+	# saldoafinanciar = str(amount_and_cents_with_commas(float(row[3])))
+	# preciom2 = str(amount_and_cents_with_commas(float(row[4])))
+	# if abonointeres:
+	# 	totalapagar = str(amount_and_cents_with_commas(abonointeres + float(row[1])))
+	# else:
+	# 	totalapagar = str(amount_and_cents_with_commas(float(row[5])))
+		
+	# cuenta = int(row[6])
+	#if cuenta:
+		#return "", cuenta
+	
+	template = f"""
+	<html>
+	<head>
+	<meta name="pdfkit-page-size" content="letter"/>
+	<meta charset="utf-8">
+	</head>
+	<body>"""
+	
+	t = datetime.now()
+	z = t.time()
+	fecha = "{:04d}/{:02d}/{:02d}".format(t.year, t.month, t.day)
+	hora = "{:02d}:{:02d}:{:02d}".format(z.hour, z.minute, z.second) 
+	template += f"""
+	<div style="text-align: right;">
+		<big><big
+		style="font-weight: bold;">Id de la Tabla:&nbsp; {amortizacion} 
+		</big></big>
+		<br> {fecha} &nbsp; {hora} </span><br>
+	</div>
+	<hr style="width: 100%; height: 2px;">
+	<table style="text-align: left; width: 985px; height: 82px; margin-left: auto; margin-right: auto;"
+	border="0" cellpadding="2" cellspacing="2">
+		<tbody>
+		<tr>
+			<td></td>
+			<td style="text-align: right; width: 190px;"><big>Lote:</big></td>
+			<td style="text-align: left; font-weight: bold; width: 183px;"><big> {lote} </big></td>
+			<td style="text-align: right; width: 219px;"><big>Enganche:</big></td>
+			<td style="font-weight: bold; width: 357px;"><big> {enganche} </big></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td></td>
+			<td style="text-align: right; width: 190px;"><big>Superficie:</big></td>
+			<td style="text-align: left; font-weight: bold; width: 183px;"><big> {superficie} </big></td>
+			<td style="text-align: right; width: 219px;"><big>Saldo a Financiar:</big></td>
+			<td style="font-weight: bold; width: 357px"><big> {saldoafinanciar} </big></td>
+			<td></td>
+		</tr>
+		<tr>
+			<td></td>
+			<td style="text-align: right; width: 190px;"><big>Precio M2:</big></td>
+			<td style="text-align: left; font-weight: bold; width: 183px;"><big> {preciom2} </big></td>
+			<td style="text-align: right; width: 219px;"><big>Total a Pagar:</big></td>
+			<td style="font-weight: bold; width: 357px"><big> {totalapagar} </big></td>
+			<td></td>
+		</tr>
+		</tbody>
+	</table>
+	<hr style="width: 100%; height: 1px;" noshade="noshade">
+	"""
+	
+	query = f"""
+	select numerodepago as numerodepago, convert(varchar(10), fechadepago, 103) as fecha1, saldoinicial as saldoinicial, pagofijo as pagofijo, abonocapital as abonocapital, interes as interes, saldofinal as saldofinal
+	from gixamortizaciondetalle where fkamortizacion = {amortizacion} and eliminado = 0 order by fechadepago, numerodepago
+	"""
+	rows=[]
+	for x in ses.execute(query):
+		rows.append(dict(numerodepago=x.numerodepago, fecha1=x.fecha1, saldoinicial=x.saldoinicial, pagofijo=x.pagofijo, abonocapital=x.abonocapital, interes=x.interes, saldofinal=x.saldofinal))
+	
+	detail, footer = "", ""
+	lines, page, pages = 0, 1, 1
+	template += """
+	<div style="width:100%">
+	<table class="table">
+	<thead>
+    <tr>
+      <th scope="col">No. de Pago</th>
+      <th scope="col">Fecha de Pago</th>
+      <th scope="col">Saldo Inicial</th>
+      <th scope="col">Pago</th>
+	  <th scope="col">Abono a Capital</th>
+      <th scope="col">Intereses</th>
+      <th scope="col">Saldo Final</th>
+    </tr>
+	</thead>
+	<tbody>
+	"""
+	
+	#return template
+	aux = len(rows) / 35.0
+	pages = int(aux)
+	if (aux - int(aux)) > 0:
+		pages += 1
+		
+	for row in rows:
+		numerodepago = str(int(row["numerodepago"]))
+		d, m, a = row["fecha1"].split("/")
+		fechadepago = "%02d/%s/%04d" % (int(d), meses[int(m)], int(a))
+		saldoinicial = formato_comas.format(float(row["saldoinicial"]))
+		pagofijo = formato_comas.format(float(row["pagofijo"]))
+		abonocapital = formato_comas.format(float(row["abonocapital"]))
+		interes = formato_comas.format(float(row["interes"]))
+		saldofinal = formato_comas.format(float(row["saldofinal"]))
+		tag = ''; lines += 1
+		if lines > 34:
+			tag = '<div><h1></div>'
+			lines = 0
+			page += 1
+			
+		line = """
+			<tr>
+				<td style="width: 50px; height: 10px; text-align: right;">""" + numerodepago + """</td>
+				<td style="width: 140px; height: 10px; text-align: right;">""" + fechadepago + """</td>
+				<td style="width: 110px; height: 10px; text-align: right;">""" + saldoinicial + """</td>
+				<td style="width: 80px; height: 10px; text-align: right;">""" + pagofijo + """</td>
+				<td style="width: 100px; height: 10px; text-align: right;">""" + abonocapital + """</td>
+				<td style="width: 100px; height: 10px; text-align: right;">""" + interes + """</td>
+				<td style="width: 100px; height: 10px; text-align: right;">""" + saldofinal + """</td>
+			</tr>
+		"""
+		template+=line
+	template+= """
+	</tbody>
+	</table>
+	</div>
+	</body>
+	</html>
+	"""
+	return template
+
+
 @view_config(route_name="otroprint", renderer="json", request_method="GET")
 def otroprint(request):
 	cuenta=request.params.get("cuenta", "")
@@ -15249,6 +15532,8 @@ def otroprint(request):
 		template=contrato_template(cuenta)
 	if tipo=="pagare" and cuenta !=None:
 		template=pagare_template(cuenta)
+	if tipo=="tabla" and cuenta !=None:
+		template=tablatemplate(cuenta)
 
 	pdfkit.from_string(template, "out.pdf")
 	response = FileResponse("out.pdf", request=request, content_type="application/pdf")
