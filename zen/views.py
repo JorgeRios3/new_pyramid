@@ -553,6 +553,7 @@ def obtenerSolicitudcheque(solicitud=0):
 	datos = Datos()
 	args = dict(solicitudcheque=solicitud)
 	d = enbbcall("solicitudchequeimpresion", args)
+	print("viendo si funciona hasta obtenersolicutud", datos)
 	datos.fechaprogramada = fecha_descriptiva(
 		d.get("fechaprogramada")
 	)  # "Febrero 19, 2016"
@@ -15886,6 +15887,8 @@ def printers_info(user=None, id=None, match=True):
 		config = dict()
 		emptyDic = dict()
 		print("user vale", user)
+		#este es es un hack para evirtar el cloudspooler
+		return []
 		if user:
 			print(paint.yellow("printers_info user is ... {}".format(user)))
 			for x in ptable.filter(rdb.row["user"] == user.get("id")).run():
