@@ -15564,6 +15564,7 @@ def otroprint(request):
 
 @view_config(route_name="otro", renderer="json", request_method="GET")
 def otro(request):
+	print("llego a la ruta otro")
 	value = printdispatcher(request)
 	if value.get("printed", "0") == "0":
 		request.response.status_code = 400
@@ -15573,6 +15574,7 @@ def otro(request):
 def printdispatcher(request):
 	r = request.params
 	print(paint.blue(r))
+	print("esto fue aca 2000")
 	printer = r.get("printer", "")
 	email = r.get("email", "")
 	if email:
@@ -15632,6 +15634,7 @@ def printdispatcher(request):
 			elif tipo in (["pagocomision"]):
 				datos = eval(func_name)(pago)
 			elif tipo in (["solicitudcheque"]):
+				print("si entro aquiiiiii 1000")
 				datos = eval(func_name)(solicitudcheque)
 			elif tipo in (["generaexcel"]):
 				datos = eval(func_name)(filename)
