@@ -12,8 +12,8 @@ from datetime import datetime
 # 	db = 1
 # else:
 # 	db = 0
-
-host, port, db = "127.0.0.1", 6380, 0
+#quizas esta bien el puerto 6380 pero lo cambiaremos
+host, port, db = "192.168.1.124", 6379, 0
 # if args.server:
 # 	host = args.server
 

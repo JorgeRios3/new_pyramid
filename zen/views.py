@@ -77,7 +77,7 @@ import os
 
 # c2p=CantidadAPalabras
 
-redis_host, redis_port, redis_db = "10.0.1.124", 6379, 5
+redis_host, redis_port, redis_db = "192.168.1.124", 6379, 5
 redis_conn = None
 formato_comas = "{:,.2f}"
 
