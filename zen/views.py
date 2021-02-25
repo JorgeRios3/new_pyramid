@@ -552,6 +552,7 @@ def fecha_descriptiva(fecha):
 def obtenerSolicitudcheque(solicitud=0):
 	datos = Datos()
 	args = dict(solicitudcheque=solicitud)
+	print("aca obtenerSolicitudcheque 1", datos)
 	d = enbbcall("solicitudchequeimpresion", args)
 	print("viendo si funciona hasta obtenersolicutud", datos)
 	datos.fechaprogramada = fecha_descriptiva(
