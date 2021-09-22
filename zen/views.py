@@ -12264,7 +12264,7 @@ class LotesPagadosArcadiaRest(EAuth):
 @resource(
 	collection_path="api/pruebaji", path="api/pruebaji/{id}"
 )
-class LotesPagadosArcadiaRest():
+class PruebaJi():
 	def __init__(self, request, context=None):
 		self.request = request
 
