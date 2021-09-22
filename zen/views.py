@@ -15947,6 +15947,7 @@ def lotespinares(request):
 	where i.fk_etapa in ({})""".format(
 		etapa
 	)
+	return dict(lotes=[])
 	resultado = []
 	for x in DBSession2.execute(sql):
 		manzana = x.manzana
