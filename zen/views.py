@@ -15934,6 +15934,7 @@ def foo(request):
 
 @view_config(route_name="lotespinares", renderer="json", request_method="GET")
 def lotespinares(request):
+	return dict(lotes=[])
 	rp = request.params
 	try:
 		etapa = rp.get("etapa", "")
@@ -15947,11 +15948,6 @@ def lotespinares(request):
 	where i.fk_etapa in ({})""".format(
 		etapa
 	)
-	response = Response({"jaja":"jejej"})
-	response.headers.update({
-        'Access-Control-Allow-Origin': '*',
-    })
-	return response
 	resultado = []
 	for x in DBSession2.execute(sql):
 		manzana = x.manzana
