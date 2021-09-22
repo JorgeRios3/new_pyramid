@@ -15962,7 +15962,12 @@ def lotespinares(request):
 			)
 		)
 	DBSession2.close()
-	return dict(lotes=resultado)
+	response = Response(body=dict(lotes=resultado))
+	response.headers.update({
+            'Access-Control-Allow-Origin': '*',
+    })
+	return response
+	#return dict(lotes=resultado)
 
 
 @view_config(route_name="routeauth", renderer="json", request_method="POST")
