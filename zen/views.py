@@ -15947,7 +15947,11 @@ def lotespinares(request):
 	where i.fk_etapa in ({})""".format(
 		etapa
 	)
-	return dict(lotes=[])
+	response = Response(body=dict(lotes=[]))
+	response.headers.update({
+        'Access-Control-Allow-Origin': '*',
+    })
+	return response
 	resultado = []
 	for x in DBSession2.execute(sql):
 		manzana = x.manzana
