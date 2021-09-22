@@ -15947,7 +15947,7 @@ def lotespinares(request):
 	where i.fk_etapa in ({})""".format(
 		etapa
 	)
-	response = Response(body={"lotes":"jaja"})
+	response = Response({"jaja":"jejej"})
 	response.headers.update({
         'Access-Control-Allow-Origin': '*',
     })
