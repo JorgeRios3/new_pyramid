@@ -1,4 +1,5 @@
 from cornice.resource import resource, view
+from cornice import Service
 import os
 from tempfile import NamedTemporaryFile
 import time
@@ -12259,6 +12260,17 @@ class LotesPagadosArcadiaRest(EAuth):
 			)
 
 		return dict(lotespagadosarcadias=result)
+
+@resource(
+	collection_path="api/pruebaji", path="api/pruebaji/{id}"
+)
+class LotesPagadosArcadiaRest():
+	def __init__(self, request, context=None):
+		self.request = request
+
+	def collection_get(self):
+
+		return dict(lotespagadosarcadias={})
 
 
 @resource(collection_path="api/clientesarcadias", path="api/clientesarcadias/{id}")
