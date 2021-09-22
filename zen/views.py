@@ -12273,6 +12273,14 @@ class PruebaJi():
 		return dict(lotespagadosarcadias={})
 
 
+foobar = Service(name="foobar", path="api/foobar")
+@foobar.get()
+def get_foobar(request):
+	return "jajaja"
+
+foobar = Service(name='foobar', path='api/foobar', cors_origins=('*',))
+
+
 @resource(collection_path="api/clientesarcadias", path="api/clientesarcadias/{id}")
 class ClientesArcadiaRest(EAuth):
 	def __init__(self, request, context=None):
